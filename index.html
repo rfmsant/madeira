@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Madeira 2026 🌺</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1220; --bg2:#121a2e; --card:#16203a; --card2:#1c2847;
+    --line:#27365c; --txt:#eaf0ff; --mut:#93a3c9; --acc:#ff5a8a; --acc2:#36d6c3;
+    --gold:#ffc861; --ok:#3dd68f; --shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;overscroll-behavior-y:none}
+  #root{max-width:540px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:78px}
+  .scr{padding:16px 16px 8px}
+  .hdr{display:flex;align-items:center;gap:10px;padding:14px 16px 8px}
+  .hdr h1{font-size:20px;margin:0;font-weight:800;letter-spacing:-.4px}
+  .hdr .sub{font-size:12px;color:var(--mut);font-weight:500}
+  .who{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--card);
+    border:1px solid var(--line);padding:5px 10px;border-radius:30px;font-size:12px;font-weight:700}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+
+  /* tabs */
+  .tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:540px;
+    background:rgba(12,18,32,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
+  .tab{flex:1;border:none;background:none;color:var(--mut);font-size:10px;font-weight:700;
+    display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;cursor:pointer;font-family:inherit}
+  .tab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2}
+  .tab.on{color:var(--acc)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+    padding:4px 9px;border-radius:20px;background:var(--card2);color:var(--mut)}
+  .btn{border:none;border-radius:13px;padding:12px 16px;font-weight:700;font-family:inherit;
+    font-size:14px;cursor:pointer;background:var(--acc);color:#fff;width:100%}
+  .btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+  .btn.gold{background:var(--gold);color:#3a2a00}
+  input,textarea{font-family:inherit;background:var(--bg2);border:1px solid var(--line);
+    color:var(--txt);border-radius:12px;padding:11px;width:100%;font-size:14px}
+  textarea{resize:vertical;min-height:60px}
+
+  /* day */
+  .dayhead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .daypill{font-size:12px;font-weight:800;color:var(--gold)}
+  .progress{height:7px;background:var(--bg2);border-radius:10px;overflow:hidden;margin:8px 0 2px}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:10px;transition:width .4s}
+
+  .stop{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+  .stop:last-child{border-bottom:none}
+  .chk{width:26px;height:26px;border-radius:9px;border:2px solid var(--line);flex-shrink:0;
+    margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--bg2)}
+  .chk.done{background:var(--ok);border-color:var(--ok)}
+  .chk.done svg{stroke:#06281a}
+  .stoptxt{flex:1;min-width:0}
+  .stoptxt .nm{font-weight:700;font-size:14.5px;line-height:1.25}
+  .stoptxt .nm.done{text-decoration:line-through;color:var(--mut)}
+  .stoptxt .meta{font-size:11.5px;color:var(--mut);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:12px;background:var(--card2);color:var(--mut)}
+  .pet{color:var(--acc2)} .nopet{color:#ff7a7a}
+  .flight{background:linear-gradient(135deg,#1d2b52,#16203a);border:1px dashed #3a4f8a}
+
+  .thumbs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .thumb{width:54px;height:54px;border-radius:10px;object-fit:cover;border:1px solid var(--line)}
+  .addph{width:54px;height:54px;border-radius:10px;border:1px dashed var(--line);background:var(--bg2);
+    display:flex;align-items:center;justify-content:center;color:var(--mut);cursor:pointer;font-size:22px}
+
+  /* feed */
+  .post{margin-bottom:16px}
+  .post .top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px;color:#fff}
+  .post img.ph{width:100%;border-radius:14px;display:block;max-height:460px;object-fit:cover}
+  .post .cap{font-size:14px;margin:9px 2px 6px;line-height:1.4}
+  .act{display:flex;gap:16px;align-items:center;margin:4px 2px}
+  .act button{background:none;border:none;color:var(--mut);display:flex;align-items:center;gap:5px;
+    font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+  .act button.liked{color:var(--acc)}
+  .cmt{font-size:13px;margin:5px 2px;color:var(--txt)}
+  .cmt b{font-weight:700}
+  .cmtline{display:flex;gap:7px;margin-top:8px}
+
+  /* food */
+  .food{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .food .nm{font-weight:700;font-size:14px;flex:1}
+  .food .cat{font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .votes{display:flex;gap:6px;flex-shrink:0}
+  .vbox{text-align:center;min-width:42px;background:var(--bg2);border:1px solid var(--line);
+    border-radius:10px;padding:4px 2px;cursor:pointer}
+  .vbox .v{font-weight:800;font-size:15px}
+  .vbox .who2{font-size:9px;color:var(--mut);font-weight:700}
+  .vbox.you{border-color:var(--acc)}
+  .vbox.done{background:linear-gradient(135deg,#1a3a2e,#16203a)}
+
+  .seg{display:flex;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:14px;gap:4px}
+  .seg button{flex:1;border:none;background:none;color:var(--mut);font-weight:700;font-size:12px;
+    padding:8px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--acc);color:#fff}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;
+    align-items:flex-end;justify-content:center}
+  .sheet{background:var(--card);width:100%;max-width:540px;border-radius:22px 22px 0 0;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+  .sheet h3{margin:0 0 12px}
+  .slid{width:100%}
+  .empty{text-align:center;color:var(--mut);padding:40px 20px;font-size:14px}
+  .big{font-size:34px;text-align:center;margin:10px 0}
+  .center{text-align:center}
+  .muted{color:var(--mut);font-size:12.5px}
+  .row{display:flex;gap:8px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .grid3 img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+  .load{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;
+    justify-content:center;flex-direction:column;gap:14px;z-index:200}
+  .spin{width:38px;height:38px;border:3px solid var(--line);border-top-color:var(--acc);
+    border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--card2);
+    border:1px solid var(--line);padding:10px 18px;border-radius:30px;font-size:13px;font-weight:700;
+    z-index:150;box-shadow:var(--shadow)}
+</style>
+</head>
+<body>
+<div id="root"><div class="load"><div class="spin"></div><div class="muted">A carregar a viagem…</div></div></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>@keyframes fade{from{opacity:.3}to{opacity:1}}</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc,
+  serverTimestamp, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+/* ============================================================
+   1. FIREBASE CONFIG  —  ⚠️ SUBSTITUI pelos teus valores
+   (Firebase console > Project settings > Web app config)
+============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyA1x2zxsjQ3TY1ALsGjbVBdSo-FXUR6ZfM",
+  authDomain: "madeira-viagem.firebaseapp.com",
+  projectId: "madeira-viagem",
+  storageBucket: "madeira-viagem.firebasestorage.app",
+  messagingSenderId: "431424806116",
+  appId: "1:431424806116:web:6bd98958982ff052d320f1"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+/* ============================================================
+   2. DADOS INICIAIS — Dias 1-3 pré-preenchidos
+   Dias 4-5 vazios para o Rui acrescentar (botão + dentro do dia)
+============================================================ */
+const TRIP_ID = "madeira2026"; // doc partilhado entre os dois
+
+const SEED_DAYS = [
+  { id:"d1", date:"18 Jun", label:"Quinta", title:"Chegada + Funchal", stops:[
+    {id:"s_voo1", name:"Voo Lisboa → Funchal", type:"voo", time:"06:30", pet:true, note:"Chegada 08:20. Troy viaja convosco ✈️", flight:true},
+    {id:"s1", name:"Check-in / largar malas (São Martinho)", type:"base", time:"09:30", pet:true},
+    {id:"s2", name:"Rua de Santa Maria", type:"passeio", time:"10:30", pet:true},
+    {id:"s3", name:"Mercado dos Lavradores", type:"experiência", time:"11:15", pet:false, note:"Animais não entram"},
+    {id:"s4", name:"Praça do Município", type:"passeio", time:"12:00", pet:true},
+    {id:"s5", name:"Almoço (Avenida Arriaga)", type:"comida", time:"12:45", pet:true, note:"Esplanadas aceitam cães"},
+    {id:"s6", name:"Parque de Santa Catarina", type:"natureza", time:"14:00", pet:true},
+    {id:"s7", name:"Teleférico Funchal → Monte", type:"experiência", time:"15:00", pet:false, note:"Cães não permitidos na cabine"},
+    {id:"s8", name:"Igreja N. Sra. do Monte", type:"histórico", time:"15:30", pet:true, note:"Exterior/jardim ok"},
+    {id:"s9", name:"Carros de Cesto", type:"experiência", time:"16:30", pet:false},
+    {id:"s10", name:"Praia do Lido / piscinas", type:"praia", time:"17:30", pet:false, note:"Verificar época balnear"},
+    {id:"s11", name:"Jantar", type:"comida", time:"20:00", pet:true},
+    {id:"s12", name:"Casino da Madeira", type:"noite", time:"22:00", pet:false},
+  ]},
+  { id:"d2", date:"19 Jun", label:"Sexta", title:"Norte → Este → Sul", stops:[
+    {id:"d2s1", name:"Casas Típicas de Santana", type:"passeio", time:"10:00", pet:true},
+    {id:"d2s2", name:"Parque Florestal das Queimadas", type:"natureza", time:"10:45", pet:true, note:"Espaço exterior, ótimo p/ Troy"},
+    {id:"d2s3", name:"Miradouro do Guindaste", type:"miradouro", time:"11:45", pet:true},
+    {id:"d2s4", name:"Porto da Cruz (vila)", type:"passeio", time:"12:15", pet:true},
+    {id:"d2s5", name:"Miradouro de São Lourenço", type:"miradouro", time:"13:00", pet:true},
+    {id:"d2s6", name:"Almoço — Talho do Caniço", type:"comida", time:"14:00", pet:false, note:"Confirmar se aceita cães"},
+    {id:"d2s7", name:"Miradouro do Cristo Rei", type:"miradouro", time:"15:30", pet:true},
+    {id:"d2s8", name:"Praia dos Reis Magos", type:"praia", time:"16:30", pet:false},
+  ]},
+  { id:"d3", date:"20 Jun", label:"Sábado", title:"Costa Noroeste", stops:[
+    {id:"d3s1", name:"Capelinha de São Vicente", type:"histórico", time:"10:30", pet:true, note:"Exterior ok"},
+    {id:"d3s2", name:"Grutas e Centro de Vulcanismo", type:"experiência", time:"11:00", pet:false, note:"Cães não entram nas grutas"},
+    {id:"d3s3", name:"Miradouro do Véu da Noiva", type:"miradouro", time:"12:30", pet:true},
+    {id:"d3s4", name:"Praia do Seixal + almoço", type:"praia", time:"13:15", pet:false, note:"Parking complicado"},
+    {id:"d3s5", name:"Piscinas Naturais do Seixal", type:"praia", time:"15:00", pet:false},
+    {id:"d3s6", name:"Praia da Ribeira da Janela", type:"miradouro", time:"16:00", pet:true, note:"Rochedos icónicos"},
+    {id:"d3s7", name:"Piscinas Naturais Porto Moniz", type:"praia", time:"16:45", pet:false},
+  ]},
+  { id:"d4", date:"21 Jun", label:"Domingo", title:"(a definir)", stops:[] },
+  { id:"d5", date:"22 Jun", label:"Segunda", title:"Último dia + Voo", stops:[
+    {id:"d5_voo", name:"Voo Funchal → Lisboa", type:"voo", time:"21:55", pet:true, note:"Chegada 23:40. Estar no aeroporto ~20:00", flight:true},
+  ]},
+];
+
+/* Comidas & bebidas — lista do Rui + as que faltavam (marcadas ✨) */
+const SEED_FOODS = [
+  // Poncha
+  {id:"f1",name:"Poncha Regional",cat:"bebida"},
+  {id:"f2",name:"Poncha Maracujá",cat:"bebida"},
+  {id:"f3",name:"Poncha Pescadores",cat:"bebida"},
+  {id:"f4",name:"Poncha Morango",cat:"bebida"},
+  {id:"f5",name:"Poncha Tangerina",cat:"bebida"},
+  {id:"f6",name:"Poncha Limão ✨",cat:"bebida"},
+  // Pratos
+  {id:"f7",name:"Espetada em Pau de Loureiro",cat:"prato"},
+  {id:"f8",name:"Espada com Banana",cat:"prato"},
+  {id:"f9",name:"Filete de Espada",cat:"prato"},
+  {id:"f10",name:"Bife de Atum",cat:"prato"},
+  {id:"f11",name:"Picado",cat:"prato"},
+  {id:"f12",name:"Lapas",cat:"prato"},
+  {id:"f13",name:"Cracas",cat:"prato"},
+  {id:"f14",name:"Castanhetas",cat:"prato"},
+  {id:"f15",name:"Sopa de Tripa",cat:"prato"},
+  {id:"f16",name:"Sopa de Tomate",cat:"prato"},
+  {id:"f17",name:"Milho Frito",cat:"prato"},
+  {id:"f18",name:"Prego no Bolo do Caco",cat:"prato"},
+  {id:"f19",name:"Bolo do Caco",cat:"prato"},
+  {id:"f20",name:"Gaiado / Atum seco ✨",cat:"prato"},
+  {id:"f21",name:"Carne de Vinho e Alhos ✨",cat:"prato"},
+  // Doces
+  {id:"f22",name:"Pudim de Maracujá",cat:"doce"},
+  {id:"f23",name:"Bolo de Mel ✨",cat:"doce"},
+  {id:"f24",name:"Broas de Mel ✨",cat:"doce"},
+  {id:"f25",name:"Queijadas ✨",cat:"doce"},
+  {id:"f26",name:"Fruta exótica (anona, pitanga) ✨",cat:"doce"},
+  // Bebidas / refrigerantes
+  {id:"f27",name:"Brisa Maracujá",cat:"bebida"},
+  {id:"f28",name:"Laranjada",cat:"bebida"},
+  {id:"f29",name:"Coral (cerveja)",cat:"bebida"},
+  {id:"f30",name:"Nikita",cat:"bebida"},
+  {id:"f31",name:"Pé de Cabra",cat:"bebida"},
+  {id:"f32",name:"Sidra (da Madeira)",cat:"bebida"},
+  {id:"f33",name:"Tim Tam Tum",cat:"bebida"},
+  {id:"f34",name:"Licor de Tangerina",cat:"bebida"},
+  {id:"f35",name:"Vinho da Madeira",cat:"bebida"},
+  {id:"f36",name:"Aguardente de cana ✨",cat:"bebida"},
+  {id:"f37",name:"Niquita s/ álcool ✨",cat:"bebida"},
+];
+
+const USERS = {
+  rui:    { name:"Rui",   color:"#ff5a8a", emoji:"🧑" },
+  namo:   { name:"Rita", color:"#36d6c3", emoji:"👩" }, 
+};
+
+/* ============================================================
+   3. APP
+============================================================ */
+const { useState, useEffect, useRef } = React;
+const h = React.createElement;
+
+// --- compressão de imagem antes de upload ---
+function compress(file, max=1280, q=0.72){
+  return new Promise((res)=>{
+    const img=new Image(); const rd=new FileReader();
+    rd.onload=e=>{img.src=e.target.result};
+    img.onload=()=>{
+      let {width:w,height:ht}=img;
+      if(w>ht && w>max){ht=ht*max/w;w=max} else if(ht>max){w=w*max/ht;ht=max}
+      const c=document.createElement('canvas');c.width=w;c.height=ht;
+      c.getContext('2d').drawImage(img,0,0,w,ht);
+      c.toBlob(b=>res(b),'image/jpeg',q);
+    };
+    rd.readAsDataURL(file);
+  });
+}
+
+function Toast({msg}){ return msg ? h('div',{className:'toast'},msg) : null; }
+
+function App(){
+  const [uid,setUid]=useState(null);
+  const [me,setMe]=useState(localStorage.getItem('madeira_me')||null);
+  const [tab,setTab]=useState('plano');
+  const [days,setDays]=useState(null);
+  const [foods,setFoods]=useState(null);
+  const [posts,setPosts]=useState([]);
+  const [toast,setToast]=useState('');
+  const toastT=useRef();
+
+  const flash=(m)=>{setToast(m);clearTimeout(toastT.current);toastT.current=setTimeout(()=>setToast(''),1800)};
+
+  // auth
+  useEffect(()=>{ signInAnonymously(auth).catch(console.error);
+    return onAuthStateChanged(auth,u=>{ if(u) setUid(u.uid); }); },[]);
+
+  // seed + live sync
+  useEffect(()=>{ if(!uid) return;
+    const tripRef=doc(db,'trips',TRIP_ID);
+    getDoc(tripRef).then(snap=>{
+      if(!snap.exists()){
+        setDoc(tripRef,{days:SEED_DAYS,foods:SEED_FOODS,createdAt:serverTimestamp()});
+      }
+    });
+    const un1=onSnapshot(tripRef,s=>{ if(s.exists()){ setDays(s.data().days||[]); setFoods(s.data().foods||[]);}});
+    const un2=onSnapshot(query(collection(db,'trips',TRIP_ID,'posts'),orderBy('ts','desc')),
+      s=>setPosts(s.docs.map(d=>({id:d.id,...d.data()}))));
+    return ()=>{un1();un2();};
+  },[uid]);
+
+  if(!uid || days===null || foods===null)
+    return h('div',{className:'load'},h('div',{className:'spin'}),h('div',{className:'muted'},'A ligar ao Firebase…'));
+
+  if(!me) return h(PickUser,{onPick:(k)=>{localStorage.setItem('madeira_me',k);setMe(k);}});
+
+  const meU=USERS[me];
+  const save=async(patch)=>{ await updateDoc(doc(db,'trips',TRIP_ID),patch); };
+
+  return h('div',null,
+    h(Header,{me:meU}),
+    tab==='plano' && h(Plano,{days,me,meU,save,flash,uid}),
+    tab==='feed'  && h(Feed,{posts,me,meU,flash}),
+    tab==='comida'&& h(Comida,{foods,me,meU,save,flash}),
+    tab==='video' && h(Video,{days,posts}),
+    h(Tabs,{tab,setTab}),
+    h(Toast,{msg:toast})
+  );
+}
+
+function PickUser({onPick}){
+  return h('div',{className:'scr',style:{paddingTop:'22vh'}},
+    h('div',{className:'big'},'🌺'),
+    h('h1',{className:'center',style:{margin:'4px 0'}},'Madeira 2026'),
+    h('p',{className:'center muted',style:{marginBottom:28}},'18–22 Junho · Rui & Catarina · Troy 🐶'),
+    h('p',{className:'center',style:{fontWeight:700,marginBottom:14}},'Quem és tu?'),
+    Object.entries(USERS).map(([k,u])=>
+      h('button',{key:k,className:'btn',style:{background:u.color,marginBottom:10},onClick:()=>onPick(k)},
+        u.emoji+'  '+u.name))
+  );
+}
+
+function Header({me}){
+  return h('div',{className:'hdr'},
+    h('div',null,
+      h('h1',null,'Madeira 2026 🌺'),
+      h('div',{className:'sub'},'18–22 Jun · Troy a bordo 🐶')),
+    h('div',{className:'who'},h('span',{className:'dot'}),me.emoji+' '+me.name)
+  );
+}
+
+/* ---------- PLANO (tracker diário) ---------- */
+function Plano({days,me,meU,save,flash,uid}){
+  const [open,setOpen]=useState(days[0]?.id);
+  const toggle=async(di,si)=>{
+    const nd=structuredClone(days);
+    const st=nd[di].stops[si];
+    st.done=!st.done; st.doneBy=st.done?me:null;
+    await save({days:nd}); 
+  };
+  const addStop=async(di)=>{
+    const name=prompt('Nome do local / atividade:'); if(!name)return;
+    const nd=structuredClone(days);
+    nd[di].stops.push({id:'x'+Date.now(),name,type:'passeio',pet:true});
+    await save({days:nd});
+  };
+  const setDayTitle=async(di)=>{
+    const t=prompt('Título do dia:',days[di].title); if(t===null)return;
+    const nd=structuredClone(days); nd[di].title=t; await save({days:nd});
+  };
+
+  return h('div',{className:'scr'},
+    days.map((d,di)=>{
+      const total=d.stops.length, done=d.stops.filter(s=>s.done).length;
+      const pct=total?Math.round(done/total*100):0;
+      const isOpen=open===d.id;
+      return h('div',{key:d.id,className:'card'},
+        h('div',{className:'dayhead',onClick:()=>setOpen(isOpen?null:d.id),style:{cursor:'pointer'}},
+          h('div',null,
+            h('div',{className:'daypill'},'DIA '+(di+1)+' · '+d.date+' · '+d.label),
+            h('div',{style:{fontWeight:800,fontSize:16,marginTop:2}},d.title)),
+          h('div',{style:{marginLeft:'auto',textAlign:'right'}},
+            h('div',{style:{fontWeight:800,fontSize:13}},done+'/'+total),
+            h('div',{className:'muted',style:{fontSize:11}},isOpen?'▲':'▼'))),
+        h('div',{className:'progress'},h('div',{style:{width:pct+'%'}})),
+        isOpen && h('div',{style:{marginTop:8}},
+          d.stops.length===0 && h('div',{className:'empty'},'Sem locais ainda. Carrega em + para adicionar.'),
+          d.stops.map((s,si)=>h(Stop,{key:s.id,s,onToggle:()=>toggle(di,si),me,meU,flash,
+            di,si,days,save,uid})),
+          h('div',{className:'row',style:{marginTop:10}},
+            h('button',{className:'btn sec',onClick:()=>addStop(di)},'+ Adicionar local'),
+            h('button',{className:'btn sec',style:{flex:'0 0 auto',width:'auto',padding:'12px 14px'},
+              onClick:()=>setDayTitle(di)},'✏️'))
+        )
+      );
+    })
+  );
+}
+
+function Stop({s,onToggle,me,meU,flash,di,si,days,save,uid}){
+  const fileRef=useRef();
+  const [busy,setBusy]=useState(false);
+  const onFiles=async(e)=>{
+    const files=[...e.target.files]; if(!files.length)return; setBusy(true);
+    try{
+      const nd=structuredClone(days); const st=nd[di].stops[si]; st.photos=st.photos||[];
+      for(const f of files){
+        const blob=await compress(f);
+        const path=`trips/${TRIP_ID}/stops/${s.id}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.jpg`;
+        const r=sref(storage,path); await uploadBytes(r,blob);
+        const url=await getDownloadURL(r);
+        st.photos.push({url,by:me,ts:Date.now()});
+      }
+      await save({days:nd}); flash('Foto(s) adicionada(s) 📸');
+    }catch(err){console.error(err);flash('Erro no upload');}
+    setBusy(false);
+  };
+  return h('div',{className:'stop'+(s.flight?' flight':'')},
+    !s.flight && h('div',{className:'chk'+(s.done?' done':''),onClick:onToggle},
+      s.done && h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'#06281a',strokeWidth:3},
+        h('path',{d:'M5 13l4 4L19 7'}))),
+    s.flight && h('div',{style:{fontSize:22,flexShrink:0}},'✈️'),
+    h('div',{className:'stoptxt'},
+      h('div',{className:'nm'+(s.done?' done':'')},(s.time?s.time+'  ':'')+s.name),
+      h('div',{className:'meta'},
+        h('span',{className:'tag'},s.type),
+        s.pet?h('span',{className:'pill pet'},'🐶 pet-friendly')
+              :h('span',{className:'pill nopet'},'🚫 sem cães'),
+        s.done && s.doneBy && h('span',{className:'muted'},'✓ '+USERS[s.doneBy]?.name)),
+      s.note && h('div',{className:'muted',style:{marginTop:4}},s.note),
+      h('div',{className:'thumbs'},
+        (s.photos||[]).map((p,i)=>h('img',{key:i,className:'thumb',src:p.url})),
+        h('div',{className:'addph',onClick:()=>fileRef.current.click()}, busy?'…':'+'),
+        h('input',{ref:fileRef,type:'file',accept:'image/*',multiple:true,capture:'environment',
+          style:{display:'none'},onChange:onFiles}))
+    )
+  );
+}
+
+/* ---------- FEED estilo Instagram ---------- */
+function Feed({posts,me,meU,flash}){
+  const fileRef=useRef();
+  const [cap,setCap]=useState('');
+  const [pending,setPending]=useState(null);
+  const [busy,setBusy]=useState(false);
+
+  const pick=()=>fileRef.current.click();
+  const onFile=async(e)=>{ const f=e.target.files[0]; if(!f)return;
+    setPending(URL.createObjectURL(f)); setPending(p=>p); fileRef.current._file=f; };
+  const publish=async()=>{
+    const f=fileRef.current._file; if(!f){flash('Escolhe uma foto');return;} setBusy(true);
+    try{
+      const blob=await compress(f);
+      const path=`trips/${TRIP_ID}/feed/${Date.now()}.jpg`;
+      const r=sref(storage,path); await uploadBytes(r,blob);
+      const url=await getDownloadURL(r);
+      await addDoc(collection(db,'trips',TRIP_ID,'posts'),
+        {url,caption:cap,by:me,ts:Date.now(),likes:[],comments:[]});
+      setCap('');setPending(null);fileRef.current.value='';fileRef.current._file=null;
+      flash('Publicado! 🎉');
+    }catch(err){console.error(err);flash('Erro');}
+    setBusy(false);
+  };
+  const like=async(p)=>{
+    const has=(p.likes||[]).includes(me);
+    const likes=has?p.likes.filter(x=>x!==me):[...(p.likes||[]),me];
+    await updateDoc(doc(db,'trips',TRIP_ID,'posts',p.id),{likes});
+  };
+  const comment=async(p,txt)=>{
+    if(!txt.trim())return;
+    await updateDoc(doc(db,'trips',TRIP_ID,'posts',p.id),
+      {comments:[...(p.comments||[]),{by:me,txt:txt.trim(),ts:Date.now()}]});
+  };
+
+  return h('div',{className:'scr'},
+    h('div',{className:'card'},
+      h('div',{style:{display:'flex',gap:9,alignItems:'center',marginBottom:pending?10:0}},
+        h('div',{className:'ava',style:{background:meU.color}},meU.emoji),
+        h('div',{style:{flex:1,fontWeight:700,fontSize:13,color:'var(--mut)'}},'Partilha um momento…'),
+        h('button',{className:'btn',style:{width:'auto',padding:'10px 16px'},onClick:pick},'📷')),
+      h('input',{ref:fileRef,type:'file',accept:'image/*',capture:'environment',
+        style:{display:'none'},onChange:onFile}),
+      pending && h('div',null,
+        h('img',{src:pending,style:{width:'100%',borderRadius:12,margin:'4px 0 10px',maxHeight:280,objectFit:'cover'}}),
+        h('textarea',{placeholder:'Escreve uma legenda…',value:cap,onChange:e=>setCap(e.target.value)}),
+        h('button',{className:'btn',style:{marginTop:8},disabled:busy,onClick:publish},
+          busy?'A publicar…':'Publicar'))
+    ),
+    posts.length===0 && h('div',{className:'empty'},'Ainda sem momentos.\nSê o primeiro a partilhar! 📸'),
+    posts.map(p=>h(Post,{key:p.id,p,me,like,comment}))
+  );
+}
+
+function Post({p,me,like,comment}){
+  const u=USERS[p.by]||{name:'?',color:'#888',emoji:'❓'};
+  const [txt,setTxt]=useState('');
+  const liked=(p.likes||[]).includes(me);
+  const when=new Date(p.ts).toLocaleString('pt-PT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  return h('div',{className:'card post'},
+    h('div',{className:'top'},
+      h('div',{className:'ava',style:{background:u.color}},u.emoji),
+      h('div',null,h('div',{style:{fontWeight:800,fontSize:14}},u.name),
+        h('div',{className:'muted',style:{fontSize:11}},when))),
+    h('img',{className:'ph',src:p.url}),
+    h('div',{className:'act'},
+      h('button',{className:liked?'liked':'',onClick:()=>like(p)},
+        h('span',null,liked?'❤️':'🤍'),' ',(p.likes||[]).length||''),
+      h('button',null,'💬 ',(p.comments||[]).length||'')),
+    p.caption && h('div',{className:'cap'},h('b',null,u.name+' '),p.caption),
+    (p.comments||[]).map((c,i)=>{const cu=USERS[c.by]||{name:'?'};
+      return h('div',{key:i,className:'cmt'},h('b',null,cu.name+' '),c.txt);}),
+    h('div',{className:'cmtline'},
+      h('input',{placeholder:'Comenta…',value:txt,onChange:e=>setTxt(e.target.value),
+        onKeyDown:e=>{if(e.key==='Enter'){comment(p,txt);setTxt('');}}}),
+      h('button',{className:'btn',style:{width:'auto',padding:'0 16px'},
+        onClick:()=>{comment(p,txt);setTxt('');}},'➤'))
+  );
+}
+
+/* ---------- COMIDA (votação live) ---------- */
+function Comida({foods,me,meU,save,flash}){
+  const [filter,setFilter]=useState('todas');
+  const [edit,setEdit]=useState(null); // food being voted
+
+  const cats=['todas','bebida','prato','doce'];
+  const list=foods.filter(f=>filter==='todas'||f.cat===filter);
+
+  const setVote=async(fid,val)=>{
+    const nf=structuredClone(foods);
+    const f=nf.find(x=>x.id===fid); f.votes=f.votes||{};
+    f.votes[me]={val,ts:Date.now()};
+    await save({foods:nf}); 
+  };
+  const tried = foods.filter(f=>f.votes&&f.votes[me]).length;
+
+  return h('div',{className:'scr'},
+    h('div',{className:'card',style:{textAlign:'center'}},
+      h('div',{style:{fontWeight:800,fontSize:15}},'🍴 Sabores da Madeira'),
+      h('div',{className:'muted',style:{marginTop:3}},
+        'Já provaste '+tried+' de '+foods.length+' · votos live entre os dois')),
+    h('div',{className:'seg'},cats.map(c=>
+      h('button',{key:c,className:filter===c?'on':'',onClick:()=>setFilter(c)},
+        c.charAt(0).toUpperCase()+c.slice(1)))),
+    h('div',{className:'card'},
+      list.map(f=>h(FoodRow,{key:f.id,f,me,onVote:()=>setEdit(f)}))),
+    edit && h(VoteSheet,{f:edit,me,onClose:()=>setEdit(null),onVote:setVote})
+  );
+}
+
+function FoodRow({f,me,onVote}){
+  const v=f.votes||{};
+  const box=(uk)=>{
+    const val=v[uk]?.val;
+    const isYou=uk===me;
+    return h('div',{className:'vbox'+(isYou?' you':'')+(val!=null?' done':''),
+      onClick:isYou?onVote:undefined},
+      h('div',{className:'v',style:{color:val!=null?'var(--gold)':'var(--mut)'}}, val!=null?val:'–'),
+      h('div',{className:'who2'},USERS[uk].name));
+  };
+  return h('div',{className:'food'},
+    h('div',{style:{flex:1}},
+      h('div',{className:'nm'},f.name),
+      h('div',{className:'cat'},f.cat)),
+    h('div',{className:'votes'},box('rui'),box('namo'))
+  );
+}
+
+function VoteSheet({f,me,onClose,onVote}){
+  const cur=f.votes?.[me]?.val ?? 5;
+  const [val,setVal]=useState(cur);
+  return h('div',{className:'modal',onClick:onClose},
+    h('div',{className:'sheet',onClick:e=>e.stopPropagation()},
+      h('h3',null,f.name),
+      h('div',{className:'big',style:{color:'var(--gold)'}},val),
+      h('input',{type:'range',min:0,max:10,step:1,value:val,className:'slid',
+        onChange:e=>setVal(+e.target.value)}),
+      h('div',{style:{display:'flex',justifyContent:'space-between'},className:'muted'},
+        h('span',null,'0'),h('span',null,'Nota de 0 a 10'),h('span',null,'10')),
+      h('button',{className:'btn gold',style:{marginTop:18},
+        onClick:async()=>{await onVote(f.id,val);onClose();}},'Guardar nota'),
+      h('button',{className:'btn sec',style:{marginTop:8},onClick:onClose},'Cancelar')
+    ));
+}
+
+/* ---------- VÍDEO / MONTAGEM ---------- */
+function Video({days,posts}){
+  const [playing,setPlaying]=useState(false);
+  const [idx,setIdx]=useState(0);
+  // junta todas as fotos cronologicamente
+  const allPhotos=[];
+  days.forEach(d=>d.stops.forEach(s=>(s.photos||[]).forEach(p=>
+    allPhotos.push({...p,place:s.name,day:d.date}))));
+  posts.forEach(p=>allPhotos.push({url:p.url,ts:p.ts,place:p.caption||'Momento',day:''}));
+  allPhotos.sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+  useEffect(()=>{ if(!playing||!allPhotos.length)return;
+    const t=setInterval(()=>setIdx(i=>(i+1)%allPhotos.length),1400);
+    return ()=>clearInterval(t);
+  },[playing,allPhotos.length]);
+
+  return h('div',{className:'scr'},
+    h('div',{className:'card center'},
+      h('div',{style:{fontWeight:800,fontSize:15,marginBottom:4}},'🎬 Montagem da viagem'),
+      h('div',{className:'muted'}, allPhotos.length+' fotos · por ordem cronológica')),
+    allPhotos.length===0 ? h('div',{className:'empty'},'Adiciona fotos no plano ou no feed\npara criares a montagem 🎞️')
+    : h('div',null,
+        h('div',{className:'card',style:{padding:0,overflow:'hidden'}},
+          h('div',{style:{position:'relative',background:'#000'}},
+            h('img',{src:allPhotos[idx].url,
+              style:{width:'100%',height:380,objectFit:'cover',display:'block',
+                animation:'fade .6s'}}),
+            h('div',{style:{position:'absolute',bottom:0,left:0,right:0,
+              padding:'30px 14px 14px',background:'linear-gradient(transparent,rgba(0,0,0,.8))'}},
+              h('div',{style:{fontWeight:800,fontSize:16}},allPhotos[idx].place),
+              h('div',{style:{fontSize:12,opacity:.85}},allPhotos[idx].day)))),
+        h('div',{className:'row',style:{marginTop:12}},
+          h('button',{className:'btn',onClick:()=>setPlaying(p=>!p)},
+            playing?'⏸ Pausa':'▶ Reproduzir slideshow'),
+          h('button',{className:'btn sec',style:{width:'auto',padding:'12px 16px'},
+            onClick:()=>setIdx(i=>(i+1)%allPhotos.length)},'⏭')),
+        h('div',{className:'muted center',style:{marginTop:8,fontSize:12}},
+          (idx+1)+' / '+allPhotos.length),
+        h('div',{className:'card',style:{marginTop:14}},
+          h('div',{style:{fontWeight:700,marginBottom:8,fontSize:13}},'Todas as fotos'),
+          h('div',{className:'grid3'},
+            allPhotos.map((p,i)=>h('img',{key:i,src:p.url,onClick:()=>setIdx(i),
+              style:{cursor:'pointer',opacity:i===idx?1:.6}})))),
+        h('div',{className:'muted center',style:{marginTop:10,fontSize:11.5,padding:'0 20px'}},
+          '💡 Para exportar como vídeo .mp4 real com o trajeto animado, ',
+          'grava o ecrã do slideshow (o telemóvel faz isto nativamente) ',
+          'ou diz-me para adicionar export automático.')
+      )
+  );
+}
+
+/* ---------- TABS ---------- */
+function Tabs({tab,setTab}){
+  const items=[
+    ['plano','Plano','M5 7h14M5 12h14M5 17h10'],
+    ['feed','Feed','M4 5h16v14H4z M4 15l4-4 3 3 5-5 4 4'],
+    ['comida','Sabores','M7 3v18 M11 3v6a2 2 0 01-4 0 M17 3c-1.5 2-2 4-2 6s2 3 2 3v9'],
+    ['video','Montagem','M4 5h16v14H4z M10 9l5 3-5 3z'],
+  ];
+  return h('div',{className:'tabs'},items.map(([k,lbl,d])=>
+    h('button',{key:k,className:'tab'+(tab===k?' on':''),onClick:()=>setTab(k)},
+      h('svg',{viewBox:'0 0 24 24'},h('path',{d,strokeLinecap:'round',strokeLinejoin:'round'})),
+      h('span',null,lbl))));
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>
