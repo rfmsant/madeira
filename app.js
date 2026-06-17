@@ -46,6 +46,7 @@ const wazeUrl = (q)=>`https://waze.com/ul?q=${encodeURIComponent(q+' Madeira')}`
    3. SEED
 ============================================================ */
 const ITIN_VERSION = 2; // bump quando o roteiro muda → força migração preservando fotos
+const BARS_VERSION = 2; // bump para forçar reposição dos bares (preserva votos)
 const SEED_DAYS = [
   { id:"d1", date:"18 Jun", label:"Quinta", title:"Chegada + Funchal", stops:[
     {id:"s_v1", name:"Voo Lisboa \u2192 Funchal", type:"voo", time:"06:30", pet:true, desc:"Chegada 08:20. Troy viaja convosco.", flight:true},
@@ -297,9 +298,9 @@ function App(){
       }
       setDays(savedDays);setFoods(dt.foods||[]);
       let savedBars=dt.bars&&dt.bars.length?dt.bars:SEED_BARS;
-      // migração: re-semear a partir de SEED_BARS (coordenadas/zona novas) preservando votos
+      // migração: reconstrói SEMPRE a lista oficial completa, preservando votos por nome.
+      // Garante que bares apagados por engano voltam, e que coordenadas/zonas ficam atualizadas.
       const byName={}; savedBars.forEach(b=>{byName[b.name]={votes:b.votes,lat:b.lat,lng:b.lng};});
-      let needsUpdate=false;
       const merged=SEED_BARS.map(sb=>{
         const old=byName[sb.name];
         const lat=sb.lat??old?.lat??null, lng=sb.lng??old?.lng??null;
@@ -307,10 +308,11 @@ function App(){
         if(old?.votes) out.votes=old.votes;
         return out;
       });
-      if(savedBars.length!==merged.length) needsUpdate=true;
-      else for(const m of merged){ const o=savedBars.find(b=>b.name===m.name);
+      // dispara update se algo difere: nº de bares, versão, falta de bar, ou coordenada nova
+      let needsUpdate = savedBars.length!==merged.length || dt.barsVersion!==BARS_VERSION;
+      if(!needsUpdate) for(const m of merged){ const o=savedBars.find(b=>b.name===m.name);
         if(!o||(m.lat!=null&&o.lat==null)||o.zona!==m.zona){needsUpdate=true;break;} }
-      if(needsUpdate){ updateDoc(ref,{bars:merged}).catch(()=>{}); savedBars=merged; }
+      if(needsUpdate){ updateDoc(ref,{bars:merged,barsVersion:BARS_VERSION}).catch(()=>{}); savedBars=merged; }
       setBars(savedBars)}});
     const u2=onSnapshot(query(collection(db,'trips',TRIP_ID,'posts'),orderBy('ts','desc')),
       s=>setPosts(s.docs.map(d=>({id:d.id,...d.data()}))));
