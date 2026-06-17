@@ -8,12 +8,13 @@ import { getStorage, ref as sref, uploadBytes, getDownloadURL, deleteObject } fr
    1. FIREBASE CONFIG  —  ⚠️ cola aqui os teus valores
 ============================================================ */
 const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "REPLACE_ME.firebaseapp.com",
-  projectId: "REPLACE_ME",
-  storageBucket: "REPLACE_ME.appspot.com",
-  messagingSenderId: "REPLACE_ME",
-  appId: "REPLACE_ME"
+  apiKey: "AIzaSyA1x2zxsjQ3TY1ALsGjbVBdSo-FXUR6ZfM",
+  authDomain: "madeira-viagem.firebaseapp.com",
+  databaseURL: "https://madeira-viagem-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "madeira-viagem",
+  storageBucket: "madeira-viagem.firebasestorage.app",
+  messagingSenderId: "431424806116",
+  appId: "1:431424806116:web:6bd98958982ff052d320f1"
 };
 
 const app = initializeApp(firebaseConfig);
