@@ -45,44 +45,65 @@ const wazeUrl = (q)=>`https://waze.com/ul?q=${encodeURIComponent(q+' Madeira')}`
 /* ============================================================
    3. SEED
 ============================================================ */
+const ITIN_VERSION = 2; // bump quando o roteiro muda → força migração preservando fotos
 const SEED_DAYS = [
   { id:"d1", date:"18 Jun", label:"Quinta", title:"Chegada + Funchal", stops:[
-    {id:"s_v1", name:"Voo Lisboa → Funchal", type:"voo", time:"06:30", pet:true, desc:"Chegada 08:20. Troy viaja convosco.", flight:true},
-    {id:"s1", name:"Check-in São Martinho", type:"base", time:"09:30", pet:true, desc:"Largar malas na base, zona oeste do Funchal."},
-    {id:"s2", name:"Rua de Santa Maria", type:"passeio", time:"10:30", pet:true, desc:"Rua histórica com as portas pintadas."},
-    {id:"s3", name:"Mercado dos Lavradores", type:"experiência", time:"11:15", pet:false, desc:"Mercado icónico de fruta, flores e peixe."},
-    {id:"s4", name:"Praça do Município", type:"passeio", time:"12:00", pet:true, desc:"Praça em calçada portuguesa."},
-    {id:"s5", name:"Almoço — Av. Arriaga", type:"comida", time:"12:45", pet:true, desc:"Esplanadas sob as jacarandás."},
-    {id:"s6", name:"Parque de Santa Catarina", type:"natureza", time:"14:00", pet:true, desc:"Jardim com vista sobre a baía."},
-    {id:"s7", name:"Teleférico do Funchal", type:"experiência", time:"15:00", pet:false, desc:"Subida ao Monte com vista sobre a cidade."},
-    {id:"s8", name:"Igreja de Nossa Senhora do Monte", type:"histórico", time:"15:30", pet:true, desc:"Igreja no topo do Monte."},
-    {id:"s9", name:"Carros de Cesto do Monte", type:"experiência", time:"16:30", pet:false, desc:"Descida tradicional em cestos de verga."},
-    {id:"s10", name:"Praia do Lido", type:"praia", time:"17:30", pet:false, desc:"Complexo balnear no oeste do Funchal."},
-    {id:"s11", name:"Jantar", type:"comida", time:"20:00", pet:true, desc:"Primeira noite — espetada e poncha."},
-    {id:"s12", name:"Casino da Madeira", type:"noite", time:"22:00", pet:false, desc:"Edifício de Óscar Niemeyer."},
+    {id:"s_v1", name:"Voo Lisboa \u2192 Funchal", type:"voo", time:"06:30", pet:true, desc:"Chegada 08:20. Troy viaja convosco.", flight:true},
+    {id:"s1", name:"Rua de Santa Maria", type:"passeio", pet:true, desc:"Rua hist\u00f3rica com as portas pintadas."},
+    {id:"s2", name:"Mercado dos Lavradores", type:"experi\u00eancia", pet:false, desc:"Mercado ic\u00f3nico de fruta, flores e peixe."},
+    {id:"s3", name:"Pra\u00e7a do Munic\u00edpio", type:"passeio", pet:true, desc:"Pra\u00e7a em cal\u00e7ada portuguesa."},
+    {id:"s4", name:"Avenida Arriaga", type:"comida", pet:true, desc:"Almo\u00e7ar por aqui \u2014 esplanadas sob as jacarand\u00e1s."},
+    {id:"s5", name:"Avenida do Mar", type:"comida", pet:true, desc:"Ou por aqui."},
+    {id:"s6", name:"Almo\u00e7o", type:"comida", pet:true, desc:""},
+    {id:"s7", name:"Parque de Santa Catarina", type:"natureza", pet:true, desc:"Jardim com vista sobre a ba\u00eda."},
+    {id:"s8", name:"Telef\u00e9rico Funchal Monte", type:"experi\u00eancia", pet:false, desc:"Subir de telef\u00e9rico."},
+    {id:"s9", name:"Monte Palace", type:"natureza", pet:false, desc:"Jardim tropical no Monte."},
+    {id:"s10", name:"Carros de Cesto da Madeira", type:"experi\u00eancia", pet:false, desc:"Descer de cestas."},
+    {id:"s11", name:"Casa", type:"base", pet:true, desc:""},
+    {id:"s12", name:"Praia Formosa", type:"praia", pet:false, desc:"Os 4 s\u00e3o perto de casa, a decidir o que fazer."},
+    {id:"s13", name:"Praia do Lido", type:"praia", pet:false, desc:"Os 4 s\u00e3o perto de casa, a decidir o que fazer."},
+    {id:"s14", name:"Promenade do Lido", type:"passeio", pet:true, desc:"Os 4 s\u00e3o perto de casa, a decidir o que fazer."},
+    {id:"s15", name:"Doca do Cavacas (Piscinas Naturais)", type:"praia", pet:false, desc:"Os 4 s\u00e3o perto de casa, a decidir o que fazer."},
+    {id:"s16", name:"Jantar", type:"comida", pet:true, desc:""},
+    {id:"s17", name:"Casino da Madeira", type:"noite", pet:false, desc:"Edif\u00edcio de \u00d3scar Niemeyer."},
   ]},
   { id:"d2", date:"19 Jun", label:"Sexta", title:"Norte, Este e Sul", stops:[
-    {id:"d2s1", name:"Casas Típicas de Santana", type:"passeio", time:"10:00", pet:true, desc:"As casinhas triangulares de colmo."},
-    {id:"d2s2", name:"Parque das Queimadas", type:"natureza", time:"10:45", pet:true, desc:"Floresta laurissilva com casas de colmo."},
-    {id:"d2s3", name:"Miradouro do Guindaste", type:"miradouro", time:"11:45", pet:true, desc:"Plataforma de vidro sobre o mar."},
-    {id:"d2s4", name:"Porto da Cruz", type:"passeio", time:"12:15", pet:true, desc:"Vila costeira com o Penedo da Águia."},
-    {id:"d2s5", name:"Ponta de São Lourenço", type:"miradouro", time:"13:00", pet:true, desc:"Ponta leste vulcânica."},
-    {id:"d2s6", name:"Almoço — Talho do Caniço", type:"comida", time:"14:00", pet:false, desc:"Carne na brasa no Caniço."},
-    {id:"d2s7", name:"Miradouro do Cristo Rei", type:"miradouro", time:"15:30", pet:true, desc:"Estátua e vista sobre a baía do Caniço."},
-    {id:"d2s8", name:"Praia dos Reis Magos", type:"praia", time:"16:30", pet:false, desc:"Praia de calhau com piscina natural."},
+    {id:"d2s1", name:"N\u00facleo de Casas T\u00edpicas de Santana", type:"passeio", pet:true, desc:"As casinhas triangulares de colmo."},
+    {id:"d2s2", name:"Parque Florestal das Queimadas", type:"natureza", pet:true, desc:"Floresta laurissilva com casas de colmo."},
+    {id:"d2s3", name:"Porto da Cruz (vila)", type:"passeio", pet:true, desc:"Vila costeira com o Penedo da \u00c1guia."},
+    {id:"d2s4", name:"Cascata \u00c1gua D'Alto", type:"levada", pet:true, desc:"\u00c9 uma caminhada dif\u00edcil de 20min para cada lado."},
+    {id:"d2s5", name:"Miradouro do Guindaste", type:"miradouro", pet:true, desc:"Plataforma de vidro sobre o mar."},
+    {id:"d2s6", name:"Almo\u00e7o \u2014 Talho do Cani\u00e7o", type:"comida", pet:false, desc:"Carne na brasa no Cani\u00e7o."},
+    {id:"d2s7", name:"Miradouro Ponta de S\u00e3o Louren\u00e7o", type:"miradouro", pet:true, desc:"Ponta leste vulc\u00e2nica."},
+    {id:"d2s8", name:"Miradouro do Cristo Rei", type:"miradouro", pet:true, desc:"Est\u00e1tua e vista sobre a ba\u00eda do Cani\u00e7o."},
+    {id:"d2s9", name:"Praia dos Reis Magos", type:"praia", pet:false, desc:"Praia de calhau com piscina natural."},
+    {id:"d2s10", name:"Casa", type:"base", pet:true, desc:""},
+    {id:"d2s11", name:"Jantar", type:"comida", pet:true, desc:""},
   ]},
-  { id:"d3", date:"20 Jun", label:"Sábado", title:"Costa Noroeste", stops:[
-    {id:"d3s1", name:"Capela de São Vicente", type:"histórico", time:"10:30", pet:true, desc:"Capela do séc. XVII escavada na rocha."},
-    {id:"d3s2", name:"Grutas de São Vicente", type:"experiência", time:"11:00", pet:false, desc:"Tour por tubos de lava + filme 3D."},
-    {id:"d3s3", name:"Véu da Noiva", type:"miradouro", time:"12:30", pet:true, desc:"Cascata sobre a falésia."},
-    {id:"d3s4", name:"Praia do Seixal", type:"praia", time:"13:15", pet:false, desc:"Areia preta vulcânica com cascata."},
-    {id:"d3s5", name:"Piscinas Naturais do Seixal", type:"praia", time:"15:00", pet:false, desc:"Piscinas de rocha vulcânica."},
-    {id:"d3s6", name:"Ribeira da Janela", type:"miradouro", time:"16:00", pet:true, desc:"Rochedos icónicos no mar."},
-    {id:"d3s7", name:"Piscinas Naturais do Porto Moniz", type:"praia", time:"16:45", pet:false, desc:"As famosas piscinas vulcânicas."},
+  { id:"d3", date:"20 Jun", label:"S\u00e1bado", title:"Costa Noroeste", stops:[
+    {id:"d3s1", name:"Capelinha de S\u00e3o Vicente", type:"hist\u00f3rico", pet:true, desc:"Capela do s\u00e9c. XVII escavada na rocha de basalto."},
+    {id:"d3s2", name:"Cascata do V\u00e9u da Noiva", type:"miradouro", pet:true, desc:"Cascata sobre a fal\u00e9sia, vista do miradouro."},
+    {id:"d3s3", name:"Piscinas Naturais do Seixal", type:"praia", pet:false, desc:"Piscinas de rocha vulc\u00e2nica."},
+    {id:"d3s4", name:"Praia do Seixal", type:"praia", pet:false, desc:"Areia preta vulc\u00e2nica com cascata."},
+    {id:"d3s5", name:"Praia da Ribeira da Janela", type:"miradouro", pet:true, desc:"Rochedos ic\u00f3nicos no mar."},
+    {id:"d3s6", name:"Piscinas Naturais Velhas / Porto Moniz", type:"praia", pet:false, desc:"As piscinas gr\u00e1tis, mais selvagens."},
+    {id:"d3s7", name:"Piscinas Naturais Novas / Porto Moniz", type:"praia", pet:false, desc:"As pagas, mais f\u00e1ceis de entrar."},
   ]},
-  { id:"d4", date:"21 Jun", label:"Domingo", title:"Por definir", stops:[] },
-  { id:"d5", date:"22 Jun", label:"Segunda", title:"Último dia e Voo", stops:[
-    {id:"d5_v", name:"Voo Funchal → Lisboa", type:"voo", time:"21:55", pet:true, desc:"Chegada 23:40. Aeroporto por volta das 20:00.", flight:true},
+  { id:"d4", date:"21 Jun", label:"Domingo", title:"C\u00e2mara de Lobos e Sul", stops:[
+    {id:"d4s1", name:"C\u00e2mara de Lobos (vila)", type:"passeio", pet:true, desc:"Vila piscat\u00f3ria bonita ao entardecer."},
+    {id:"d4s2", name:"Praia da Faj\u00e3 dos Padres", type:"praia", pet:false, desc:"Praia de calhau acess\u00edvel por telef\u00e9rico."},
+    {id:"d4s3", name:"Cabo Gir\u00e3o", type:"miradouro", pet:true, desc:"Skywalk de vidro sobre a fal\u00e9sia mais alta da Europa."},
+    {id:"d4s4", name:"Telef\u00e9rico da Faj\u00e3 dos Padres", type:"experi\u00eancia", pet:false, desc:"Descida ao mar pela fal\u00e9sia."},
+    {id:"d4s5", name:"Blandy's Wine Lodge", type:"experi\u00eancia", pet:false, desc:"Prova de Vinho da Madeira no centro do Funchal."},
+  ]},
+  { id:"d5", date:"22 Jun", label:"Segunda", title:"Interior + Voo", stops:[
+    {id:"d5s1", name:"Pico do Areeiro", type:"miradouro", pet:true, desc:"Um dos pontos mais altos da ilha, vista acima das nuvens."},
+    {id:"d5s2", name:"Planalto de Paul da Serra", type:"natureza", pet:true, desc:"Planalto de altitude, paisagem \u00fanica."},
+    {id:"d5s3", name:"Praia da Calheta", type:"praia", pet:false, desc:"Praia de areia dourada artificial."},
+    {id:"d5s4", name:"Route das Bananas", type:"experi\u00eancia", pet:true, desc:"Percurso pelas bananeiras."},
+    {id:"d5s5", name:"Cascata dos Anjos", type:"natureza", pet:true, desc:"Cascata onde se passa de carro por baixo."},
+    {id:"d5s6", name:"Ponta do Sol", type:"passeio", pet:true, desc:"Vila com vibe relaxada e p\u00f4r do sol."},
+    {id:"d5_v", name:"Voo Funchal \u2192 Lisboa", type:"voo", time:"21:55", pet:true, desc:"Chegada 23:40. Aeroporto por volta das 20:00.", flight:true},
   ]},
 ];
 
@@ -139,34 +160,65 @@ const BAR_DATA = [
   {n:"Poncha da Imperatriz",z:"Funchal",lat:32.6432365,lng:-16.9195864,r:4.6},
   {n:"Salão de Bilhares - Bilha Café",z:"Funchal"},
   {n:"Snack Bar Vermelho",z:"Camacha",lat:32.6707637,lng:-16.8558774,r:4.4},
-  {n:"Tasquinha Janota",z:"Funchal"},{n:"Tasca da Teicy",z:"Funchal"},
-  {n:"Taberna e Mercearia Canto do Passo",z:"Funchal"},{n:"Torneira Bar",z:"Funchal"},
-  {n:"Bar Roque",z:"Funchal"},{n:"Chega de Securas",z:"Funchal"},{n:"Bar O Vizinho",z:"Funchal"},
-  {n:"Restaurante Viola",z:"Funchal"},{n:"A Ferradura",z:"Santana"},{n:"Tahiti",z:"Funchal"},
-  {n:"Peter's Poncha",z:"Funchal"},{n:"Rum Bar",z:"Funchal"},{n:"Taberna Boa Hora",z:"Funchal"},
-  {n:"Pharmacia Do Bento",z:"Funchal"},{n:"Taberna Dos Barreiros",z:"Funchal"},
-  {n:"Barmen Madeira Bar",z:"Funchal"},{n:"The Prince Albert Pub & Food",z:"Funchal"},
-  {n:"A Venda Do André",z:"Funchal"},{n:"Pharmacia do Vasco",z:"Funchal"},{n:"As Patinhas",z:"Funchal"},
-  {n:"Venda do Jacintinho",z:"Funchal"},{n:"Bar Careca",z:"Campanário",lat:32.6694693,lng:-17.044602,r:4.5},
-  {n:"Bota Abaixo Boteco",z:"Funchal"},{n:"Restaurant Bar a Pinheira",z:"Funchal"},
-  {n:"Taberna Dos Lobos",z:"Câmara de Lobos"},{n:"Casa do Farol",z:"Funchal"},{n:"Sunny Bar",z:"Funchal"},
-  {n:"Tasca do Barbas",z:"Câmara de Lobos"},{n:"Venda do Rato",z:"Funchal"},
-  {n:"Tasquinha do Henrique",z:"Funchal"},{n:"Tasca Da Laurinda",z:"Funchal"},
-  {n:"Taberna do Petisco",z:"Funchal"},{n:"Grutas do Faial",z:"Faial"},
-  {n:"Poncha do Pescador",z:"Funchal"},{n:"Restaurante Sol Poente",z:"Funchal"},
-  {n:"Abrigo do Pastor",z:"Camacha"},{n:"Bar Cedro",z:"Funchal"},{n:"Ramiro's",z:"Funchal"},
-  {n:"Café Restaurante Gruta",z:"Funchal"},{n:"Inverse CR7 Sports Bar",z:"Funchal"},
-  {n:"Restaurante O Moinho",z:"Funchal"},{n:"Restaurante Bar Horizonte",z:"Funchal"},
-  {n:"Bar O Moega",z:"Funchal"},{n:"Bar Riacho",z:"Machico"},{n:"Mercearia Dona Mécia",z:"Funchal"},
+  {n:"Tasquinha Janota",z:"Funchal",lat:32.6546883,lng:-16.9317301,r:4.7},
+  {n:"Tasca da Teicy",z:"Funchal"},
+  {n:"Taberna e Mercearia Canto do Passo",z:"Madalena do Mar",lat:32.6934746,lng:-17.1253212,r:4.7},
+  {n:"Torneira Bar",z:"Funchal",lat:32.6467814,lng:-16.9112472,r:4.4},
+  {n:"Bar do Roque",z:"Machico",lat:32.7396835,lng:-16.8363342,r:4.6},
+  {n:"Chega de Securas",z:"Camacha",lat:32.6894521,lng:-16.8423394,r:4.5},
+  {n:"Viola Restaurant",z:"Câmara de Lobos",lat:32.665956,lng:-16.97969,r:4.6},
+  {n:"A Ferradura",z:"Santana"},
+  {n:"Peter's Poncha",z:"Caniço",lat:32.6435055,lng:-16.8300653,r:4.4},
+  {n:"Taberna Boa Hora",z:"Câmara de Lobos",lat:32.6531845,lng:-16.9687291,r:4.7},
+  {n:"Pharmacia Do Bento",z:"Funchal",lat:32.6478871,lng:-16.9061376,r:4.7},
+  {n:"Taberna Dos Barreiros",z:"Funchal",lat:32.6474114,lng:-16.9293236,r:4.6},
+  {n:"Barmen Madeira Bar",z:"Funchal"},
+  {n:"The Prince Albert Pub",z:"Funchal",lat:32.6434041,lng:-16.9191043,r:4.4},
+  {n:"A Venda Do André",z:"Quinta Grande",lat:32.6611682,lng:-17.014312,r:4.6},
+  {n:"Pharmacia do Vasco",z:"São Roque",lat:32.6658668,lng:-16.924535,r:4.6},
+  {n:"As Patinhas",z:"Funchal",lat:32.6408531,lng:-16.9467732,r:4.4},
+  {n:"Venda do Jacintinho",z:"Funchal"},
+  {n:"Bar Careca",z:"Campanário",lat:32.6694693,lng:-17.044602,r:4.5},
+  {n:"Bota Abaixo Boteco",z:"Funchal",lat:32.6755021,lng:-16.9503101,r:4.5},
+  {n:"Restaurant Bar a Pinheira",z:"Funchal"},
+  {n:"Taberna Dos Lobos",z:"Câmara de Lobos",lat:32.6485436,lng:-16.9751339,r:4.3},
+  {n:"Casa do Farol",z:"Funchal"},{n:"Sunny Bar",z:"Funchal"},
+  {n:"Tasca do Barbas",z:"Funchal",lat:32.6636533,lng:-16.9400919,r:4.6},
+  {n:"Venda do Rato",z:"Ponta do Sol",lat:32.6833675,lng:-17.0946521,r:4.8},
+  {n:"Tasquinha do Henrique",z:"Ponta do Sol",lat:32.6978275,lng:-17.1301135,r:4.3},
+  {n:"Tasca Da Laurinda",z:"Funchal"},
+  {n:"Taberna do Petisco",z:"Santa Cruz",lat:32.688013,lng:-16.7915491,r:4.6},
+  {n:"Grutas do Faial",z:"Faial"},
+  {n:"Poncha do Pescador",z:"Funchal",lat:32.6478693,lng:-16.9003025,r:4.5},
+  {n:"Restaurante Sol Poente",z:"Ponta do Sol",lat:32.6785608,lng:-17.1042177,r:4.1},
+  {n:"Abrigo do Pastor",z:"Camacha"},
+  {n:"Bar Cedro",z:"Funchal"},
+  {n:"Ramiro's",z:"Funchal",lat:32.6563499,lng:-16.9528253,r:4.2},
+  {n:"Café Restaurante Gruta",z:"Funchal"},
+  {n:"Inverse CR7 Sports Bar",z:"Funchal",lat:32.6433054,lng:-16.9146211,r:4.0},
+  {n:"Restaurante O Moinho",z:"Caniço",lat:32.6630318,lng:-16.8247845,r:4.5},
+  {n:"Restaurante Bar Horizonte",z:"Funchal",lat:32.6667298,lng:-16.8781668,r:5.0},
+  {n:"Bar O Moega",z:"Funchal"},
+  {n:"Bar Riacho",z:"Machico",lat:32.7294749,lng:-16.7917845,r:4.4},
+  {n:"Mercearia Dona Mécia",z:"Funchal",lat:32.6473568,lng:-16.9128839,r:4.6},
   {n:"João Rodrigues de Jesus",z:"Funchal"},{n:"Multi Delícias",z:"Funchal"},
-  {n:"Tasquinha O Salsa",z:"Funchal"},{n:"Bar N. Castelo",z:"Funchal"},{n:"Snack Bar Bolero",z:"Funchal"},
-  {n:"Bar da Graça",z:"Funchal"},{n:"Snack Bar Flor da Selva",z:"Funchal"},{n:"Tasca Da Mexida",z:"Funchal"},
-  {n:"John's Poncha",z:"Funchal"},{n:"Snack Bar São João",z:"Funchal"},{n:"Snack-Bar AC",z:"Funchal"},
+  {n:"Tasquinha O Salsa",z:"Funchal"},
+  {n:"Bar N. Castelo",z:"Funchal",lat:32.6493966,lng:-16.9354194,r:4.5},
+  {n:"Snack Bar Bolero",z:"Funchal",lat:32.6482052,lng:-16.9055635,r:4.9},
+  {n:"Bar da Graça",z:"Funchal"},
+  {n:"Snack Bar Flor da Selva",z:"Ribeiro Frio",lat:32.7390986,lng:-16.8881627,r:4.9},
+  {n:"Tasca Da Mexida",z:"Funchal"},
+  {n:"John's Poncha",z:"Ribeiro Frio",lat:32.7349929,lng:-16.8866223,r:4.6},
+  {n:"Snack Bar São João",z:"Funchal"},{n:"Snack-Bar AC",z:"Funchal"},
   {n:"Cantinho do Petisco",z:"Monte",lat:32.6659529,lng:-16.9088693,r:4.7},
-  {n:"Pipa Santa Clara",z:"Funchal"},{n:"Taverna Real da Poncha",z:"Funchal"},
-  {n:"Taberna Evaristo",z:"Funchal"},{n:"Banana's Pub",z:"Funchal"},{n:"101 Bar",z:"Funchal"},
-  {n:"Poncha do Calvário",z:"Funchal"},{n:"Bar Seven Seas",z:"Funchal"},
-  {n:"Restaurante Beer Garden",z:"Funchal"},{n:"Restaurante Miradouro",z:"Funchal"},
+  {n:"Pipa Santa Clara",z:"Funchal"},
+  {n:"Taverna Real da Poncha",z:"Serra de Água",lat:32.728226,lng:-17.0239434,r:4.3},
+  {n:"Taberna Evaristo",z:"Funchal"},
+  {n:"Banana's Pub",z:"Funchal",lat:32.6475082,lng:-16.9000652,r:4.5},
+  {n:"101 Bar",z:"Funchal"},{n:"Poncha do Calvário",z:"Funchal"},
+  {n:"Bar Seven Seas",z:"Câmara de Lobos",lat:32.64851,lng:-16.975497,r:4.3},
+  {n:"Restaurante Beer Garden",z:"Funchal",lat:32.6440687,lng:-16.9509355,r:4.5},
+  {n:"Restaurante Miradouro",z:"Funchal"},
   {n:"Bar Zeca",z:"São Roque do Faial",lat:32.7532398,lng:-16.8725128,r:4.7},
   {n:"Restaurante Convento Das Vinhas",z:"Funchal"},{n:"Snack Bar O Foles",z:"Funchal"},
 ];
@@ -231,16 +283,34 @@ function App(){
   useEffect(()=>{ if(!uid)return;
     const ref=doc(db,'trips',TRIP_ID);
     getDoc(ref).then(s=>{if(!s.exists())
-      setDoc(ref,{days:SEED_DAYS,foods:SEED_FOODS,bars:SEED_BARS,createdAt:serverTimestamp()})});
+      setDoc(ref,{days:SEED_DAYS,foods:SEED_FOODS,bars:SEED_BARS,
+        itinVersion:ITIN_VERSION,createdAt:serverTimestamp()})});
     const u1=onSnapshot(ref,s=>{if(s.exists()){const dt=s.data();
-      setDays(dt.days||[]);setFoods(dt.foods||[]);
-      // migração: se os bares guardados não têm 'zona', re-semear preservando votos
-      let savedBars=dt.bars&&dt.bars.length?dt.bars:SEED_BARS;
-      if(savedBars[0] && savedBars[0].zona===undefined){
-        const voteMap={}; savedBars.forEach(b=>{if(b.votes)voteMap[b.name]=b.votes;});
-        savedBars=SEED_BARS.map(b=>voteMap[b.name]?{...b,votes:voteMap[b.name]}:b);
-        updateDoc(ref,{bars:savedBars}).catch(()=>{});
+      // migração do itinerário: se a versão mudou, re-semear preservando fotos por nome de local
+      let savedDays=dt.days||[];
+      if(dt.itinVersion!==ITIN_VERSION){
+        const photoMap={}; savedDays.forEach(d=>d.stops?.forEach(st=>{
+          if(st.photos&&st.photos.length) photoMap[st.name]=st.photos; }));
+        savedDays=SEED_DAYS.map(d=>({...d,stops:d.stops.map(st=>
+          photoMap[st.name]?{...st,photos:photoMap[st.name]}:st)}));
+        updateDoc(ref,{days:savedDays,itinVersion:ITIN_VERSION}).catch(()=>{});
       }
+      setDays(savedDays);setFoods(dt.foods||[]);
+      let savedBars=dt.bars&&dt.bars.length?dt.bars:SEED_BARS;
+      // migração: re-semear a partir de SEED_BARS (coordenadas/zona novas) preservando votos
+      const byName={}; savedBars.forEach(b=>{byName[b.name]={votes:b.votes,lat:b.lat,lng:b.lng};});
+      let needsUpdate=false;
+      const merged=SEED_BARS.map(sb=>{
+        const old=byName[sb.name];
+        const lat=sb.lat??old?.lat??null, lng=sb.lng??old?.lng??null;
+        const out={...sb,lat,lng};
+        if(old?.votes) out.votes=old.votes;
+        return out;
+      });
+      if(savedBars.length!==merged.length) needsUpdate=true;
+      else for(const m of merged){ const o=savedBars.find(b=>b.name===m.name);
+        if(!o||(m.lat!=null&&o.lat==null)||o.zona!==m.zona){needsUpdate=true;break;} }
+      if(needsUpdate){ updateDoc(ref,{bars:merged}).catch(()=>{}); savedBars=merged; }
       setBars(savedBars)}});
     const u2=onSnapshot(query(collection(db,'trips',TRIP_ID,'posts'),orderBy('ts','desc')),
       s=>setPosts(s.docs.map(d=>({id:d.id,...d.data()}))));
