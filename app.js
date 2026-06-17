@@ -108,38 +108,70 @@ const SEED_FOODS = [
   {id:"f35",name:"Vinho da Madeira",cat:"bebida"},{id:"f36",name:"Aguardente de Cana",cat:"bebida",novo:true},
 ];
 
-/* Rota da Poncha — ~95 bares. Os 8 com coordenadas conhecidas vêm já com lat/lng.
-   Os restantes são geocodificados no browser (Nominatim) e guardados no Firestore. */
-const KNOWN = {
-  "Taberna da Poncha":[32.7164928,-17.0331137],
-  "Bar Careca":[32.6694693,-17.044602],
-  "Vendadonoé":[32.655953,-16.8276074],
-  "Cantinho do Petisco":[32.6659529,-16.9088693],
-  "Bar Zeca":[32.7532398,-16.8725128],
-};
-const BAR_NAMES = ["Bar Os Castrinhos","The Small House","Tasquinha do Brazão","A Casa Da Levada",
-"Bar Number Two","Sete Mares","Taberna da Poncha","Taberna da Serra","Poncha do Lombo doutor",
-"Bar Formiga","Bar Do Papagaio","Porto de abrigo","Restaurante Ponte Velha","Vendadonoé",
-"Snack-bar O Girinho","Forest - Food & Coffe","Poncha De São Vicente","Venda do Sócio, Lda",
-"Adega do Pomar","Bar Morenos","Portas vermelhas","Tasquinha Da Poncha","À Quinta","Bar da Chupa",
-"Bar Salomão","Poncha da Imperatriz","Salão de Bilhares - Bilha Café","Snack bar vermelho",
-"Tasquinha Janota","Tasca da Teicy","Taberna e mercearia Canto do Passo","Torneira Bar","Bar Roque",
-"Chega de Securas","Bar O Vizinho","Restaurante Viola","A Ferradura","Tahiti","Peter's Poncha",
-"Rum Bar","Taberna Boa Hora","Pharmacia Do Bento","Taberna Dos Barreiros","Barmen Madeira Bar",
-"The Prince Albert Pub & Food","A Venda Do André","Pharmacia do Vasco","As Patinhas",
-"Venda do Jacintinho","Bar Careca","Bota Abaixo Boteco","Restaurant Bar a Pinheira",
-"Taberna Dos Lobos","Casa do Farol","Sunny Bar","Tasca do Barbas","Venda do Rato",
-"Tasquinha do Henrique","Tasca Da Laurinda","Taberna do Petisco","Grutas do Faial",
-"Poncha do Pescador","Restaurante Sol Poente","Abrigo do Pastor","Bar Cedro","Ramiro's",
-"Café Restaurante GRUTA","Inverse CR7 Sports Bar","Restaurante O Moinho","Restaurante Bar Horizonte",
-"Bar O Moega","Bar Riacho Machico","Mercearia Dona Mécia","João Rodrigues de Jesus, Lda.",
-"Multi Delicias","Tasquinha O Salsa","Bar N. Castelo","Snack Bar Bolero","Bar da Graça",
-"Snack Bar Flor da Selva","Tasca Da Mexida","John's Poncha","Snack Bar São João","SNACK-BAR AC",
-"Cantinho do Petisco","Pipa Santa Clara","Taverna Real da Poncha","Taberna Evaristo","Banana's Pub",
-"101 Bar","Poncha do Calvário","Bar Seven Seas","Restaurante Beer Garden","Restaurante Miradouro",
-"Bar Zeca","Restaurante Convento Das Vinhas","Snack Bar O Foles"];
-const SEED_BARS = BAR_NAMES.map((n,i)=>({
-  id:"b"+i, name:n, lat:KNOWN[n]?.[0]??null, lng:KNOWN[n]?.[1]??null
+/* Rota da Poncha — bares com coordenadas/zona/rating reais (Google Places).
+   Os que ainda não têm lat/lng geocodificam no browser (Nominatim) na 1ª vez. */
+const BAR_DATA = [
+  {n:"Bar Castrinhos",z:"Funchal",lat:32.6571147,lng:-16.9548985,r:4.6},
+  {n:"The Small House",z:"Funchal"},
+  {n:"Tasquinha do Brazão",z:"Funchal",lat:32.6551803,lng:-16.9250495,r:4.1},
+  {n:"A Casa da Levada",z:"Funchal",lat:32.6437646,lng:-16.9441422,r:4.5},
+  {n:"Bar Nº 2 (É Prá Poncha)",z:"Câmara de Lobos",lat:32.6484709,lng:-16.9751921,r:4.4},
+  {n:"Cafetaria Sete Mares",z:"Funchal",lat:32.6435589,lng:-16.9146699,r:4.4},
+  {n:"Taberna da Poncha",z:"Serra de Água",lat:32.7164928,lng:-17.0331137,r:4.7},
+  {n:"Taberna da Serra",z:"Serra de Água",lat:32.7204051,lng:-17.031064,r:4.5},
+  {n:"Poncha do Lombo Doutor",z:"Ponta do Pargo",lat:32.7262577,lng:-17.1670633,r:4.7},
+  {n:"Bar Formiga",z:"Fajã da Ovelha",lat:32.7767849,lng:-17.2230625,r:4.7},
+  {n:"Bar Do Papagaio",z:"Fajã da Ovelha",lat:32.7694235,lng:-17.2152989,r:4.7},
+  {n:"Porto de Abrigo",z:"Funchal"},
+  {n:"Restaurante Ponte Velha",z:"Faial",lat:32.7864295,lng:-16.8528054,r:4.1},
+  {n:"Venda do Noé",z:"Caniço",lat:32.655953,lng:-16.8276074,r:4.7},
+  {n:"Snack-bar O Girinho",z:"Camacha",lat:32.6762843,lng:-16.8517063,r:4.4},
+  {n:"Forest - Food & Coffee",z:"Funchal"},
+  {n:"Poncha De São Vicente",z:"São Vicente",lat:32.8029077,lng:-17.0433405,r:4.5},
+  {n:"Venda do Sócio",z:"Funchal"},
+  {n:"Adega do Pomar",z:"Camacha",lat:32.6766079,lng:-16.851523,r:4.5},
+  {n:"Bar Morenos",z:"Câmara de Lobos"},
+  {n:"Portas Vermelhas",z:"Camacha",lat:32.6941202,lng:-16.837146,r:4.6},
+  {n:"Tasquinha da Poncha",z:"Serra de Água",lat:32.7265304,lng:-17.0285239,r:4.6},
+  {n:"Bar À Quinta",z:"Quinta Grande",lat:32.6625704,lng:-17.011387,r:4.6},
+  {n:"The Chupa",z:"Machico",lat:32.728756,lng:-16.775123,r:4.5},
+  {n:"Bar Salomão",z:"Camacha",lat:32.6762981,lng:-16.8519399,r:5.0},
+  {n:"Poncha da Imperatriz",z:"Funchal",lat:32.6432365,lng:-16.9195864,r:4.6},
+  {n:"Salão de Bilhares - Bilha Café",z:"Funchal"},
+  {n:"Snack Bar Vermelho",z:"Camacha",lat:32.6707637,lng:-16.8558774,r:4.4},
+  {n:"Tasquinha Janota",z:"Funchal"},{n:"Tasca da Teicy",z:"Funchal"},
+  {n:"Taberna e Mercearia Canto do Passo",z:"Funchal"},{n:"Torneira Bar",z:"Funchal"},
+  {n:"Bar Roque",z:"Funchal"},{n:"Chega de Securas",z:"Funchal"},{n:"Bar O Vizinho",z:"Funchal"},
+  {n:"Restaurante Viola",z:"Funchal"},{n:"A Ferradura",z:"Santana"},{n:"Tahiti",z:"Funchal"},
+  {n:"Peter's Poncha",z:"Funchal"},{n:"Rum Bar",z:"Funchal"},{n:"Taberna Boa Hora",z:"Funchal"},
+  {n:"Pharmacia Do Bento",z:"Funchal"},{n:"Taberna Dos Barreiros",z:"Funchal"},
+  {n:"Barmen Madeira Bar",z:"Funchal"},{n:"The Prince Albert Pub & Food",z:"Funchal"},
+  {n:"A Venda Do André",z:"Funchal"},{n:"Pharmacia do Vasco",z:"Funchal"},{n:"As Patinhas",z:"Funchal"},
+  {n:"Venda do Jacintinho",z:"Funchal"},{n:"Bar Careca",z:"Campanário",lat:32.6694693,lng:-17.044602,r:4.5},
+  {n:"Bota Abaixo Boteco",z:"Funchal"},{n:"Restaurant Bar a Pinheira",z:"Funchal"},
+  {n:"Taberna Dos Lobos",z:"Câmara de Lobos"},{n:"Casa do Farol",z:"Funchal"},{n:"Sunny Bar",z:"Funchal"},
+  {n:"Tasca do Barbas",z:"Câmara de Lobos"},{n:"Venda do Rato",z:"Funchal"},
+  {n:"Tasquinha do Henrique",z:"Funchal"},{n:"Tasca Da Laurinda",z:"Funchal"},
+  {n:"Taberna do Petisco",z:"Funchal"},{n:"Grutas do Faial",z:"Faial"},
+  {n:"Poncha do Pescador",z:"Funchal"},{n:"Restaurante Sol Poente",z:"Funchal"},
+  {n:"Abrigo do Pastor",z:"Camacha"},{n:"Bar Cedro",z:"Funchal"},{n:"Ramiro's",z:"Funchal"},
+  {n:"Café Restaurante Gruta",z:"Funchal"},{n:"Inverse CR7 Sports Bar",z:"Funchal"},
+  {n:"Restaurante O Moinho",z:"Funchal"},{n:"Restaurante Bar Horizonte",z:"Funchal"},
+  {n:"Bar O Moega",z:"Funchal"},{n:"Bar Riacho",z:"Machico"},{n:"Mercearia Dona Mécia",z:"Funchal"},
+  {n:"João Rodrigues de Jesus",z:"Funchal"},{n:"Multi Delícias",z:"Funchal"},
+  {n:"Tasquinha O Salsa",z:"Funchal"},{n:"Bar N. Castelo",z:"Funchal"},{n:"Snack Bar Bolero",z:"Funchal"},
+  {n:"Bar da Graça",z:"Funchal"},{n:"Snack Bar Flor da Selva",z:"Funchal"},{n:"Tasca Da Mexida",z:"Funchal"},
+  {n:"John's Poncha",z:"Funchal"},{n:"Snack Bar São João",z:"Funchal"},{n:"Snack-Bar AC",z:"Funchal"},
+  {n:"Cantinho do Petisco",z:"Monte",lat:32.6659529,lng:-16.9088693,r:4.7},
+  {n:"Pipa Santa Clara",z:"Funchal"},{n:"Taverna Real da Poncha",z:"Funchal"},
+  {n:"Taberna Evaristo",z:"Funchal"},{n:"Banana's Pub",z:"Funchal"},{n:"101 Bar",z:"Funchal"},
+  {n:"Poncha do Calvário",z:"Funchal"},{n:"Bar Seven Seas",z:"Funchal"},
+  {n:"Restaurante Beer Garden",z:"Funchal"},{n:"Restaurante Miradouro",z:"Funchal"},
+  {n:"Bar Zeca",z:"São Roque do Faial",lat:32.7532398,lng:-16.8725128,r:4.7},
+  {n:"Restaurante Convento Das Vinhas",z:"Funchal"},{n:"Snack Bar O Foles",z:"Funchal"},
+];
+const SEED_BARS = BAR_DATA.map((b,i)=>({
+  id:"b"+i, name:b.n, zona:b.z||null, lat:b.lat??null, lng:b.lng??null, gRating:b.r??null
 }));
 
 /* ============================================================
@@ -202,7 +234,14 @@ function App(){
       setDoc(ref,{days:SEED_DAYS,foods:SEED_FOODS,bars:SEED_BARS,createdAt:serverTimestamp()})});
     const u1=onSnapshot(ref,s=>{if(s.exists()){const dt=s.data();
       setDays(dt.days||[]);setFoods(dt.foods||[]);
-      setBars(dt.bars&&dt.bars.length?dt.bars:SEED_BARS)}});
+      // migração: se os bares guardados não têm 'zona', re-semear preservando votos
+      let savedBars=dt.bars&&dt.bars.length?dt.bars:SEED_BARS;
+      if(savedBars[0] && savedBars[0].zona===undefined){
+        const voteMap={}; savedBars.forEach(b=>{if(b.votes)voteMap[b.name]=b.votes;});
+        savedBars=SEED_BARS.map(b=>voteMap[b.name]?{...b,votes:voteMap[b.name]}:b);
+        updateDoc(ref,{bars:savedBars}).catch(()=>{});
+      }
+      setBars(savedBars)}});
     const u2=onSnapshot(query(collection(db,'trips',TRIP_ID,'posts'),orderBy('ts','desc')),
       s=>setPosts(s.docs.map(d=>({id:d.id,...d.data()}))));
     return ()=>{u1();u2()};
@@ -286,6 +325,9 @@ function Plano({days,me,save,flash,openLightbox}){
     s.done=!s.done;s.doneBy=s.done?me:null;save({days:nd})};
   const editTitle=(di)=>{const t=prompt('Título do dia:',days[di].title);
     if(t!==null){const nd=structuredClone(days);nd[di].title=t;save({days:nd})}};
+  const removeStop=(di,si)=>{const s=days[di].stops[si];
+    if(!confirm(`Remover "${s.name}" do dia?`))return;
+    const nd=structuredClone(days);nd[di].stops.splice(si,1);save({days:nd});flash('Local removido')};
   return h('div',{className:'scr'},
     days.map((d,di)=>{
       const total=d.stops.length,done=d.stops.filter(s=>s.done).length;
@@ -309,7 +351,7 @@ function Plano({days,me,save,flash,openLightbox}){
           d.stops.length===0&&h('div',{className:'empty',style:{padding:'30px'}},
             h(Icon,{d:ICONS.pin,size:34}),h('div',null,'Dia livre. Adiciona os teus locais.')),
           d.stops.map((s,si)=>h(Stop,{key:s.id,s,di,si,days,me,save,flash,
-            onToggle:()=>toggle(di,si),openLightbox})),
+            onToggle:()=>toggle(di,si),onRemove:()=>removeStop(di,si),openLightbox})),
           h('div',{className:'foot-actions'},
             h('button',{className:'btn soft sm',style:{flex:1},onClick:()=>setAdding(di)},'+ Adicionar local'),
             h('button',{className:'btn ghost sm',onClick:()=>editTitle(di)},'Editar título')))
@@ -319,7 +361,7 @@ function Plano({days,me,save,flash,openLightbox}){
   );
 }
 
-function Stop({s,di,si,days,me,save,flash,onToggle,openLightbox}){
+function Stop({s,di,si,days,me,save,flash,onToggle,onRemove,openLightbox}){
   const fileRef=useRef();
   const [busy,setBusy]=useState(false);
   const [exp,setExp]=useState(false);
@@ -355,7 +397,9 @@ function Stop({s,di,si,days,me,save,flash,onToggle,openLightbox}){
           h('a',{className:'link-btn',href:mapsUrl(s.name),target:'_blank',rel:'noopener'},
             h(Icon,{d:ICONS.pin,size:15}),'Maps'),
           h('a',{className:'link-btn',href:wazeUrl(s.name),target:'_blank',rel:'noopener'},
-            h(Icon,{d:ICONS.nav,size:15}),'Waze'))),
+            h(Icon,{d:ICONS.nav,size:15}),'Waze'),
+          h('button',{className:'link-btn',style:{color:'var(--coral)',cursor:'pointer'},
+            onClick:onRemove},h(Icon,{d:ICONS.trash,size:15}),'Remover'))),
       h('div',{className:'shots'},
         (s.photos||[]).map((p,i)=>h('div',{key:i,className:'shot',onClick:()=>openLightbox({photo:p,di,si,pi:i})},
           h('img',{src:p.url}),p.cap&&h('div',{className:'bar'}))),
@@ -534,14 +578,39 @@ function Poncha({bars,me,save,flash}){
   const mapEl=useRef(null), mapObj=useRef(null), markers=useRef({});
   const [mode,setMode]=useState('conquista'); // conquista | nota
   const [active,setActive]=useState(null);
+  const [zona,setZona]=useState('todas');
+  const [sort,setSort]=useState('zona'); // zona | az | melhor | pior | porprovar
+  const [showFilters,setShowFilters]=useState(false);
   const itemRefs=useRef({});
   const geocoding=useRef(false);
 
   const tried=bars.filter(b=>b.votes&&Object.keys(b.votes).length).length;
   const pct=Math.round(tried/bars.length*100);
 
-  const avg=(b)=>{const vs=b.votes?Object.values(b.votes).map(v=>v.val):[];
+  // zonas disponíveis (ordenadas por frequência)
+  const zonas=(()=>{ const c={}; bars.forEach(b=>{if(b.zona)c[b.zona]=(c[b.zona]||0)+1});
+    return Object.keys(c).sort((a,b)=>c[b]-c[a]); })();
+
+  const myAvg=(b)=>{const vs=b.votes?Object.values(b.votes).map(v=>v.val).filter(v=>v!=null):[];
     return vs.length?vs.reduce((a,c)=>a+c,0)/vs.length:null};
+
+  // lista filtrada + ordenada
+  const visible=(()=>{
+    let list=bars.filter(b=>zona==='todas'||b.zona===zona);
+    const av=(b)=>{const a=myAvg(b);return a!=null?a:(b.gRating??-1)};
+    if(sort==='az') list=[...list].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
+    else if(sort==='melhor') list=[...list].sort((a,b)=>av(b)-av(a));
+    else if(sort==='pior') list=[...list].sort((a,b)=>av(a)-av(b));
+    else if(sort==='porprovar') list=[...list].sort((a,b)=>{
+      const da=a.votes&&Object.keys(a.votes).length?1:0, db=b.votes&&Object.keys(b.votes).length?1:0;
+      return da-db;});
+    else { // por zona (agrupado), depois alfabético
+      list=[...list].sort((a,b)=>(a.zona||'').localeCompare(b.zona||'','pt')||a.name.localeCompare(b.name,'pt'));
+    }
+    return list;
+  })();
+
+  const avg=myAvg;
   const pinColor=(b)=>{ const done=b.votes&&Object.keys(b.votes).length;
     if(mode==='conquista') return done?'oklch(0.58 0.13 156)':'oklch(0.72 0.018 160)';
     const a=avg(b); if(a==null) return 'oklch(0.80 0.018 160)';
@@ -628,10 +697,30 @@ function Poncha({bars,me,save,flash}){
       h('div',{style:{flex:1}},
         h('div',{className:'lbl'},tried+' de '+bars.length+' bares conquistados'),
         h('div',{className:'bar'},h('span',{style:{width:pct+'%'}})))),
+    // controlos de filtro/ordenação
+    h('div',{style:{display:'flex',gap:8,marginBottom:12}},
+      h('select',{value:zona,onChange:e=>setZona(e.target.value),
+        style:{flex:1,padding:'10px 12px',fontSize:14}},
+        h('option',{value:'todas'},'Todas as zonas'),
+        zonas.map(z=>h('option',{key:z,value:z},z))),
+      h('select',{value:sort,onChange:e=>setSort(e.target.value),
+        style:{flex:1,padding:'10px 12px',fontSize:14}},
+        h('option',{value:'zona'},'Por zona'),
+        h('option',{value:'az'},'A → Z'),
+        h('option',{value:'melhor'},'Melhor nota'),
+        h('option',{value:'pior'},'Pior nota'),
+        h('option',{value:'porprovar'},'Por provar'))),
     h('div',{className:'card'},
-      bars.map(b=>h(BarItem,{key:b.id,b,me,active:active===b.id,
-        setRef:(el)=>itemRefs.current[b.id]=el,
-        onToggle:()=>toggle(b),onVote:()=>setVoteFor(b)}))),
+      visible.map((b,i)=>{
+        const showZona = sort==='zona' && (i===0||visible[i-1].zona!==b.zona);
+        return h(React.Fragment,{key:b.id},
+          showZona&&h('div',{style:{padding:'10px 16px 4px',fontSize:12,fontWeight:700,
+            color:'var(--brand-d)',textTransform:'uppercase',letterSpacing:'.04em',
+            background:'var(--brand-pa)'}},b.zona||'Sem zona'),
+          h(BarItem,{b,me,active:active===b.id,
+            setRef:(el)=>itemRefs.current[b.id]=el,
+            onToggle:()=>toggle(b),onVote:()=>setVoteFor(b)}));
+      })),
     voteFor&&h(BarVoteSheet,{b:voteFor,me,onClose:()=>setVoteFor(null),onVote:setVote})
   );
 }
@@ -660,7 +749,9 @@ function BarItem({b,me,active,setRef,onToggle,onVote}){
   return h('div',{className:'bar-item'+(active?' active':''),ref:setRef},
     h('div',{className:'bar-tick'+(done?' on':''),onClick:onToggle},h(Icon,{d:ICONS.check,size:14})),
     h('div',{className:'bar-info'},
-      h('div',{className:'bar-name'},b.name),
+      h('div',{className:'bar-name'},b.name,
+        b.gRating&&h('span',{className:'bar-rating'},'★ '+b.gRating)),
+      b.zona&&h('div',{className:'bar-zona'},b.zona),
       h('div',{className:'bar-actions'},
         h('a',{className:'bar-mini',href:mapsUrl(b.name),target:'_blank',rel:'noopener'},
           h(Icon,{d:ICONS.pin,size:13}),'Maps'),
