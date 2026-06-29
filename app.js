@@ -47,6 +47,7 @@ const wazeUrl = (q)=>`https://waze.com/ul?q=${encodeURIComponent(q+' Madeira')}`
 ============================================================ */
 const ITIN_VERSION = 2; // bump quando o roteiro muda → força migração preservando fotos
 const BARS_VERSION = 2; // bump para forçar reposição dos bares (preserva votos)
+const FOODS_VERSION = 2; // bump para atualizar a lista de sabores (preserva votos)
 const SEED_DAYS = [
   { id:"d1", date:"18 Jun", label:"Quinta", title:"Chegada + Funchal", stops:[
     {id:"s_v1", name:"Voo Lisboa \u2192 Funchal", type:"voo", time:"06:30", pet:true, desc:"Chegada 08:20. Troy viaja convosco.", flight:true},
@@ -111,23 +112,25 @@ const SEED_DAYS = [
 const SEED_FOODS = [
   {id:"f1",name:"Poncha Regional",cat:"bebida"},{id:"f2",name:"Poncha Maracujá",cat:"bebida"},
   {id:"f3",name:"Poncha Pescadores",cat:"bebida"},{id:"f4",name:"Poncha Morango",cat:"bebida"},
-  {id:"f5",name:"Poncha Tangerina",cat:"bebida"},{id:"f6",name:"Poncha Limão",cat:"bebida",novo:true},
+  {id:"f5",name:"Poncha Tangerina",cat:"bebida"},
   {id:"f7",name:"Espetada em Pau de Loureiro",cat:"prato"},{id:"f8",name:"Espada com Banana",cat:"prato"},
   {id:"f9",name:"Filete de Espada",cat:"prato"},{id:"f10",name:"Bife de Atum",cat:"prato"},
   {id:"f11",name:"Picado",cat:"prato"},{id:"f12",name:"Lapas",cat:"prato"},
   {id:"f13",name:"Cracas",cat:"prato"},{id:"f14",name:"Castanhetas",cat:"prato"},
   {id:"f15",name:"Sopa de Tripa",cat:"prato"},{id:"f16",name:"Sopa de Tomate",cat:"prato"},
   {id:"f17",name:"Milho Frito",cat:"prato"},{id:"f18",name:"Prego no Bolo do Caco",cat:"prato"},
-  {id:"f19",name:"Bolo do Caco",cat:"prato"},{id:"f20",name:"Gaiado",cat:"prato",novo:true},
-  {id:"f21",name:"Carne de Vinho e Alhos",cat:"prato",novo:true},
-  {id:"f22",name:"Pudim de Maracujá",cat:"doce"},{id:"f23",name:"Bolo de Mel",cat:"doce",novo:true},
-  {id:"f24",name:"Broas de Mel",cat:"doce",novo:true},{id:"f25",name:"Queijadas",cat:"doce",novo:true},
-  {id:"f26",name:"Anona",cat:"doce",novo:true},
+  {id:"f19",name:"Bolo do Caco",cat:"prato"},{id:"f20",name:"Gaiado",cat:"prato"},
+  {id:"f21",name:"Carne de Vinho e Alhos",cat:"prato"},
+  {id:"f22",name:"Pudim de Maracujá",cat:"doce"},{id:"f23",name:"Bolo de Mel",cat:"doce"},
+  {id:"f24",name:"Broas de Mel",cat:"doce"},{id:"f25",name:"Queijadas",cat:"doce"},
+  {id:"f26",name:"Anona",cat:"doce"},
   {id:"f27",name:"Brisa Maracujá",cat:"bebida"},{id:"f28",name:"Laranjada",cat:"bebida"},
   {id:"f29",name:"Coral",cat:"bebida"},{id:"f30",name:"Nikita",cat:"bebida"},
+  {id:"f37",name:"Nikita Ananás",cat:"bebida"},{id:"f38",name:"Nikita Maracujá",cat:"bebida"},
+  {id:"f39",name:"Nikita Morango",cat:"bebida"},
   {id:"f31",name:"Pé de Cabra",cat:"bebida"},{id:"f32",name:"Sidra da Madeira",cat:"bebida"},
   {id:"f33",name:"Tim Tam Tum",cat:"bebida"},{id:"f34",name:"Licor de Tangerina",cat:"bebida"},
-  {id:"f35",name:"Vinho da Madeira",cat:"bebida"},{id:"f36",name:"Aguardente de Cana",cat:"bebida",novo:true},
+  {id:"f35",name:"Vinho da Madeira",cat:"bebida"},{id:"f36",name:"Aguardente de Cana",cat:"bebida"},
 ];
 
 /* Rota da Poncha — bares com coordenadas/zona/rating reais (Google Places).
@@ -285,7 +288,8 @@ function App(){
     const ref=doc(db,'trips',TRIP_ID);
     getDoc(ref).then(s=>{if(!s.exists())
       setDoc(ref,{days:SEED_DAYS,foods:SEED_FOODS,bars:SEED_BARS,
-        itinVersion:ITIN_VERSION,createdAt:serverTimestamp()})});
+        itinVersion:ITIN_VERSION,barsVersion:BARS_VERSION,foodsVersion:FOODS_VERSION,
+        createdAt:serverTimestamp()})});
     const u1=onSnapshot(ref,s=>{if(s.exists()){const dt=s.data();
       // migração do itinerário: se a versão mudou, re-semear preservando fotos por nome de local
       let savedDays=dt.days||[];
@@ -296,7 +300,15 @@ function App(){
           photoMap[st.name]?{...st,photos:photoMap[st.name]}:st)}));
         updateDoc(ref,{days:savedDays,itinVersion:ITIN_VERSION}).catch(()=>{});
       }
-      setDays(savedDays);setFoods(dt.foods||[]);
+      setDays(savedDays);
+      // migração dos sabores: atualiza a lista preservando votos (por nome)
+      let savedFoods=dt.foods||[];
+      if(dt.foodsVersion!==FOODS_VERSION){
+        const fv={}; savedFoods.forEach(f=>{if(f.votes)fv[f.name]=f.votes;});
+        savedFoods=SEED_FOODS.map(f=>fv[f.name]?{...f,votes:fv[f.name]}:f);
+        updateDoc(ref,{foods:savedFoods,foodsVersion:FOODS_VERSION}).catch(()=>{});
+      }
+      setFoods(savedFoods);
       let savedBars=dt.bars&&dt.bars.length?dt.bars:SEED_BARS;
       // migração: reconstrói SEMPRE a lista oficial completa, preservando votos por nome.
       // Garante que bares apagados por engano voltam, e que coordenadas/zonas ficam atualizadas.
