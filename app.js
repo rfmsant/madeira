@@ -391,7 +391,7 @@ function Header({me,tab}){
 
 /* ---------- PLANO ---------- */
 function Plano({days,me,save,flash,openLightbox}){
-  const [open,setOpen]=useState(days[0]?.id);
+  const [open,setOpen]=useState(null);
   const [adding,setAdding]=useState(null);
   const toggle=(di,si)=>{const nd=structuredClone(days);const s=nd[di].stops[si];
     s.done=!s.done;s.doneBy=s.done?me:null;save({days:nd})};
@@ -400,6 +400,11 @@ function Plano({days,me,save,flash,openLightbox}){
   const removeStop=(di,si)=>{const s=days[di].stops[si];
     if(!confirm(`Remover "${s.name}" do dia?`))return;
     const nd=structuredClone(days);nd[di].stops.splice(si,1);save({days:nd});flash('Local removido')};
+  const moveStop=(di,si,dir)=>{ const nj=si+dir;
+    if(nj<0||nj>=days[di].stops.length)return;
+    const nd=structuredClone(days);
+    const arr=nd[di].stops; [arr[si],arr[nj]]=[arr[nj],arr[si]];
+    save({days:nd}); };
   return h('div',{className:'scr'},
     days.map((d,di)=>{
       const total=d.stops.length,done=d.stops.filter(s=>s.done).length;
@@ -423,7 +428,9 @@ function Plano({days,me,save,flash,openLightbox}){
           d.stops.length===0&&h('div',{className:'empty',style:{padding:'30px'}},
             h(Icon,{d:ICONS.pin,size:34}),h('div',null,'Dia livre. Adiciona os teus locais.')),
           d.stops.map((s,si)=>h(Stop,{key:s.id,s,di,si,days,me,save,flash,
-            onToggle:()=>toggle(di,si),onRemove:()=>removeStop(di,si),openLightbox})),
+            onToggle:()=>toggle(di,si),onRemove:()=>removeStop(di,si),
+            onMoveUp:()=>moveStop(di,si,-1),onMoveDown:()=>moveStop(di,si,1),
+            isFirst:si===0,isLast:si===d.stops.length-1,openLightbox})),
           h('div',{className:'foot-actions'},
             h('button',{className:'btn soft sm',style:{flex:1},onClick:()=>setAdding(di)},'+ Adicionar local'),
             h('button',{className:'btn ghost sm',onClick:()=>editTitle(di)},'Editar título')))
@@ -433,7 +440,7 @@ function Plano({days,me,save,flash,openLightbox}){
   );
 }
 
-function Stop({s,di,si,days,me,save,flash,onToggle,onRemove,openLightbox}){
+function Stop({s,di,si,days,me,save,flash,onToggle,onRemove,onMoveUp,onMoveDown,isFirst,isLast,openLightbox}){
   const fileRef=useRef();
   const [busy,setBusy]=useState(false);
   const [exp,setExp]=useState(false);
@@ -471,12 +478,19 @@ function Stop({s,di,si,days,me,save,flash,onToggle,onRemove,openLightbox}){
           h('a',{className:'link-btn',href:wazeUrl(s.name),target:'_blank',rel:'noopener'},
             h(Icon,{d:ICONS.nav,size:15}),'Waze'),
           h('button',{className:'link-btn',style:{color:'var(--coral)',cursor:'pointer'},
-            onClick:onRemove},h(Icon,{d:ICONS.trash,size:15}),'Remover'))),
+            onClick:onRemove},h(Icon,{d:ICONS.trash,size:15}),'Remover')),
+        h('div',{className:'ref-row',style:{marginTop:7}},
+          h('button',{className:'link-btn',style:{cursor:isFirst?'default':'pointer',
+            opacity:isFirst?0.4:1},disabled:isFirst,onClick:onMoveUp},
+            h(Icon,{d:'M18 15l-6-6-6 6',size:15}),'Subir'),
+          h('button',{className:'link-btn',style:{cursor:isLast?'default':'pointer',
+            opacity:isLast?0.4:1},disabled:isLast,onClick:onMoveDown},
+            h(Icon,{d:'M6 9l6 6 6-6',size:15}),'Descer'))),
       h('div',{className:'shots'},
         (s.photos||[]).map((p,i)=>h('div',{key:i,className:'shot',onClick:()=>openLightbox({photo:p,di,si,pi:i})},
           h('img',{src:p.url}),p.cap&&h('div',{className:'bar'}))),
         h('div',{className:'add-shot',onClick:()=>fileRef.current.click()},busy?'…':h(Icon,{d:ICONS.plus,size:22})),
-        h('input',{ref:fileRef,type:'file',accept:'image/*',multiple:true,capture:'environment',
+        h('input',{ref:fileRef,type:'file',accept:'image/*',multiple:true,
           style:{display:'none'},onChange:onFiles}))
     )
   );
@@ -559,7 +573,7 @@ function Feed({posts,me,meU,flash}){
         h('div',{style:{flex:1,fontWeight:500,color:'var(--ink-3)',fontSize:14}},'Partilha um momento…'),
         h('button',{className:'btn sm',onClick:()=>fileRef.current.click(),
           style:{display:'flex',alignItems:'center',gap:6}},h(Icon,{d:ICONS.camera,size:18}),'Foto')),
-      h('input',{ref:fileRef,type:'file',accept:'image/*',capture:'environment',style:{display:'none'},onChange:onFile}),
+      h('input',{ref:fileRef,type:'file',accept:'image/*',style:{display:'none'},onChange:onFile}),
       pending&&h('div',{style:{marginTop:11}},
         h('img',{src:pending,style:{width:'100%',borderRadius:14,maxHeight:300,objectFit:'cover',display:'block'}}),
         h('textarea',{placeholder:'Legenda…',value:cap,onChange:e=>setCap(e.target.value),style:{marginTop:9}}),
