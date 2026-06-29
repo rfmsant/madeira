@@ -21,15 +21,39 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
-const TRIP_ID = "madeira2026";
+// Cada viagem tem o seu espaço isolado. Por defeito é a viagem do Rui.
+// Para outra viagem, abre com ?trip=NOME na URL (ex.: ...?trip=irma).
+const TRIP_ID = (()=>{ try{
+  const p=new URLSearchParams(location.search).get('trip');
+  return p ? 'madeira_'+p.replace(/[^a-z0-9_-]/gi,'').toLowerCase() : 'madeira2026';
+}catch(e){ return 'madeira2026'; } })();
 
 /* ============================================================
    2. UTILIZADORES
 ============================================================ */
-const USERS = {
-  rui:  { name:"Rui",  initial:"R", color:"oklch(0.55 0.20 295)" },
-  rita: { name:"Rita", initial:"R", color:"oklch(0.62 0.11 184)" },
+/* Perfis de viagem — cada viagem tem os seus utilizadores.
+   Para adicionar uma viagem nova: cria uma entrada aqui com o id (sem o prefixo "madeira_")
+   e abre a app com ?trip=ID. O roteiro/sabores/bares são partilhados como base. */
+const TRIP_PROFILES = {
+  // viagem do Rui (default, sem ?trip=)
+  madeira2026: {
+    u1:{ name:"Rui",  initial:"R", color:"oklch(0.55 0.20 295)" },
+    u2:{ name:"Rita", initial:"R", color:"oklch(0.62 0.11 184)" },
+  },
+  // viagem da irmã: abre com ?trip=irma
+  madeira_irma: {
+    u1:{ name:"Raquel",  initial:"R", color:"oklch(0.55 0.20 295)" },
+    u2:{ name:"António", initial:"A", color:"oklch(0.62 0.11 184)" },
+  },
 };
+// utilizadores da viagem atual (fallback genérico se a viagem não estiver definida)
+const PROFILE = TRIP_PROFILES[TRIP_ID] || {
+  u1:{ name:"Viajante 1", initial:"1", color:"oklch(0.55 0.20 295)" },
+  u2:{ name:"Viajante 2", initial:"2", color:"oklch(0.62 0.11 184)" },
+};
+// mantém as chaves 'rui'/'rita' internamente (votos já guardados dependem delas),
+// mas os nomes/cores mostrados vêm do perfil da viagem.
+const USERS = { rui: PROFILE.u1, rita: PROFILE.u2 };
 const TYPES = ["passeio","praia","miradouro","levada","comida","experiência","histórico","natureza","noite","base","voo"];
 
 const toMin = (t)=>{ if(!t) return 99999; const m=/^(\d{1,2}):(\d{2})$/.exec(t.trim());
@@ -269,7 +293,7 @@ function compress(file, max=1500, q=0.76){
 
 function App(){
   const [uid,setUid]=useState(null);
-  const [me,setMe]=useState(localStorage.getItem('madeira_me')||null);
+  const [me,setMe]=useState(localStorage.getItem('madeira_me_'+TRIP_ID)||null);
   const [tab,setTab]=useState('plano');
   const [days,setDays]=useState(null);
   const [foods,setFoods]=useState(null);
@@ -334,7 +358,7 @@ function App(){
   const changeTab=(t)=>{ setTab(t); if(scrollRef.current)scrollRef.current.scrollTop=0; window.scrollTo(0,0); };
 
   if(!uid||days===null||foods===null||bars===null) return h('div',{className:'load'},h('div',{className:'spin'}));
-  if(!me) return h(PickUser,{onPick:k=>{localStorage.setItem('madeira_me',k);setMe(k)}});
+  if(!me) return h(PickUser,{onPick:k=>{localStorage.setItem('madeira_me_'+TRIP_ID,k);setMe(k)}});
 
   const meU=USERS[me];
   const save=(patch)=>updateDoc(doc(db,'trips',TRIP_ID),patch);
