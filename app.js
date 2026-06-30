@@ -88,6 +88,7 @@ const wazeUrl = (q)=>`https://waze.com/ul?q=${encodeURIComponent(q+' Madeira')}`
 const ITIN_VERSION = 2; // bump quando o roteiro muda → força migração preservando fotos
 const BARS_VERSION = 2; // bump para forçar reposição dos bares (preserva votos)
 const FOODS_VERSION = 2; // bump para atualizar a lista de sabores (preserva votos)
+const RESTS_VERSION = 1; // bump para atualizar a lista de restaurantes (preserva votos)
 const SEED_DAYS = [
   { id:"d1", date:"18 Jun", label:"Quinta", title:"Chegada + Funchal", stops:[
     {id:"s_v1", name:"Voo Lisboa \u2192 Funchal", type:"voo", time:"06:30", pet:true, desc:"Chegada 08:20. Troy viaja convosco.", flight:true},
@@ -270,6 +271,38 @@ const SEED_BARS = BAR_DATA.map((b,i)=>({
   id:"b"+i, name:b.n, zona:b.z||null, lat:b.lat??null, lng:b.lng??null, gRating:b.r??null
 }));
 
+/* Restaurantes — categorias: snack (rápido/barato), tradicional, peixe, jantar (especial), cafe.
+   Coordenadas e ratings reais (Google Places). */
+const REST_CAT = {
+  snack:      { label:"Snack rápido", color:"oklch(0.70 0.15 50)" },
+  tradicional:{ label:"Tradicional",  color:"oklch(0.58 0.13 156)" },
+  peixe:      { label:"Peixe & Mar",  color:"oklch(0.60 0.12 230)" },
+  jantar:     { label:"Jantar especial", color:"oklch(0.55 0.20 295)" },
+  cafe:       { label:"Café & Brunch", color:"oklch(0.62 0.13 40)" },
+};
+const REST_DATA = [
+  {n:"Vila do Peixe",z:"Câmara de Lobos",cat:"peixe",lat:32.6492649,lng:-16.9748613,r:4.3,tip:"Peixe fresco grelhado, escolhes o teu. Vista sobre a baía. (já provado ✓)"},
+  {n:"Restaurante Santo António",z:"Estreito de C. de Lobos",cat:"tradicional",lat:32.6727778,lng:-16.9819444,r:4.7,tip:"A referência para espetada em pau de louro. Onde os locais mandam ir."},
+  {n:"Restaurante A Ginja",z:"Estreito de C. de Lobos",cat:"tradicional",lat:32.670647,lng:-16.978865,r:4.5,tip:"Espetada de vaca medium-rare, arroz de alho, fora do circuito turístico."},
+  {n:"Viola Restaurant",z:"Câmara de Lobos",cat:"tradicional",lat:32.665956,lng:-16.97969,r:4.6,tip:"Carne maturada de excelência, picanha off-menu. Só walk-in."},
+  {n:"As Vides",z:"Estreito de C. de Lobos",cat:"tradicional",lat:32.6708607,lng:-16.9787948,r:4.5,tip:"Espetada lendária + bolo do caco. Clássico dos locais."},
+  {n:"Restaurante Do Forte",z:"Funchal (Zona Velha)",cat:"peixe",lat:32.6468773,lng:-16.8989704,r:4.3,tip:"Peixe e marisco dentro de um forte sobre o mar. Vista linda."},
+  {n:"Casal da Penha",z:"São Martinho",cat:"peixe",lat:32.6430086,lng:-16.9193848,r:4.7,tip:"Marisco fresco, esplanada no terraço. Perto da base. Fecha domingo."},
+  {n:"Lá ao Fundo",z:"Funchal (Zona Velha)",cat:"jantar",lat:32.6472963,lng:-16.8993126,r:4.6,tip:"Tuna tartare feito na mesa, quase nível Michelin. Reservar."},
+  {n:"Santa Maria",z:"Funchal (Zona Velha)",cat:"jantar",lat:32.6479909,lng:-16.9012417,r:4.5,tip:"Sushi + petiscos de peixe, moderno e descontraído. Rua das portas."},
+  {n:"Quinta do Furão",z:"Santana",cat:"jantar",lat:32.8231577,lng:-16.8849282,r:4.4,tip:"Restaurante de quinta com vista de falésia incrível. Encaixa no Dia 2."},
+  {n:"Desarma (Michelin)",z:"Funchal",cat:"jantar",lat:32.6489967,lng:-16.9193428,r:4.9,tip:"1 estrela Michelin. Menu de degustação no 11º andar. Ocasião especial."},
+  {n:"Dona Joana Rabo-de-Peixe",z:"Funchal (Zona Velha)",cat:"tradicional",lat:32.648224,lng:-16.9025499,r:4.1,tip:"Espada com banana e maracujá. Atenção à taxa de serviço de 10%."},
+  {n:"Casa do Bolo do Caco",z:"Funchal (centro)",cat:"snack",lat:32.6491769,lng:-16.9058888,r:4.4,tip:"Prego e hambúrguer no bolo do caco, barato e rápido. Almoço Dia 1."},
+  {n:"Greenhouse Coffee Roaster",z:"Monte",cat:"cafe",lat:32.6759006,lng:-16.9010592,r:4.2,tip:"Specialty coffee numa estufa no Monte Palace. Encaixa no Dia 1."},
+  {n:"The Studio (Coffee & Brunch)",z:"São Martinho",cat:"cafe",lat:32.6487377,lng:-16.9090888,r:4.6,tip:"O melhor brunch e café da zona. Perto da base. Abre às 7h."},
+  {n:"Recanto dos Paladares",z:"Garajau",cat:"peixe",lat:32.6434495,lng:-16.8515329,r:3.9,tip:"Peixe fresco local no Garajau, menos turístico que o centro."},
+];
+const SEED_RESTS = REST_DATA.map((r,i)=>({
+  id:"r"+i, name:r.n, zona:r.z, cat:r.cat, lat:r.lat??null, lng:r.lng??null,
+  gRating:r.r??null, tip:r.tip||''
+}));
+
 /* ============================================================
    4. APP
 ============================================================ */
@@ -315,6 +348,7 @@ function App(){
   const [days,setDays]=useState(null);
   const [foods,setFoods]=useState(null);
   const [bars,setBars]=useState(null);
+  const [rests,setRests]=useState(null);
   const [posts,setPosts]=useState([]);
   const [toast,setToast]=useState('');
   const [lightbox,setLightbox]=useState(null);
@@ -328,9 +362,9 @@ function App(){
   useEffect(()=>{ if(!uid)return;
     const ref=doc(db,'trips',TRIP_ID);
     getDoc(ref).then(s=>{if(!s.exists())
-      setDoc(ref,{days:SEED_DAYS,foods:SEED_FOODS,bars:SEED_BARS,
+      setDoc(ref,{days:SEED_DAYS,foods:SEED_FOODS,bars:SEED_BARS,rests:SEED_RESTS,
         itinVersion:ITIN_VERSION,barsVersion:BARS_VERSION,foodsVersion:FOODS_VERSION,
-        createdAt:serverTimestamp()})});
+        restsVersion:RESTS_VERSION,createdAt:serverTimestamp()})});
     const u1=onSnapshot(ref,s=>{if(s.exists()){const dt=s.data();
       // config da viagem (nomes, datas, subtítulo). Se existir, aplica aos USERS.
       if(dt.config){ applyConfig(dt.config); setConfig(dt.config); }
@@ -377,7 +411,15 @@ function App(){
       if(!needsUpdate) for(const m of merged){ const o=savedBars.find(b=>b.name===m.name);
         if(!o||(m.lat!=null&&o.lat==null)||o.zona!==m.zona){needsUpdate=true;break;} }
       if(needsUpdate){ updateDoc(ref,{bars:merged,barsVersion:BARS_VERSION}).catch(()=>{}); savedBars=merged; }
-      setBars(savedBars)}});
+      setBars(savedBars);
+      // restaurantes: reconstrói a lista oficial preservando votos por nome
+      let savedRests=dt.rests&&dt.rests.length?dt.rests:SEED_RESTS;
+      const rByName={}; savedRests.forEach(r=>{if(r.votes)rByName[r.name]=r.votes;});
+      const rMerged=SEED_RESTS.map(sr=>rByName[sr.name]?{...sr,votes:rByName[sr.name]}:sr);
+      if(savedRests.length!==rMerged.length||dt.restsVersion!==RESTS_VERSION){
+        updateDoc(ref,{rests:rMerged,restsVersion:RESTS_VERSION}).catch(()=>{}); savedRests=rMerged;
+      }
+      setRests(savedRests)}});
     const u2=onSnapshot(query(collection(db,'trips',TRIP_ID,'posts'),orderBy('ts','desc')),
       s=>setPosts(s.docs.map(d=>({id:d.id,...d.data()}))));
     return ()=>{u1();u2()};
@@ -385,12 +427,15 @@ function App(){
 
   const changeTab=(t)=>{ setTab(t); if(scrollRef.current)scrollRef.current.scrollTop=0; window.scrollTo(0,0); };
 
-  if(!uid||days===null||foods===null||bars===null||config===undefined)
+  if(!uid||days===null||foods===null||bars===null||rests===null||config===undefined)
     return h('div',{className:'load'},h('div',{className:'spin'}));
   // primeira vez nesta viagem: pedir nomes/datas
-  if(config===null) return h(Setup,{onDone:(cfg)=>{
+  if(config===null) return h(Setup,{nDays:days.length,onDone:(cfg)=>{
     applyConfig(cfg);
-    updateDoc(doc(db,'trips',TRIP_ID),{config:cfg}).catch(()=>{});
+    const patch={config:cfg};
+    // recalcular as datas/dia-da-semana do roteiro a partir da data de início
+    if(cfg.start){ patch.days=relabelDays(days,cfg.start); setDays(patch.days); }
+    updateDoc(doc(db,'trips',TRIP_ID),patch).catch(()=>{});
     setConfig(cfg);
   }});
   if(!me) return h(PickUser,{config,onPick:k=>{localStorage.setItem('madeira_me_'+TRIP_ID,k);setMe(k)}});
@@ -405,7 +450,7 @@ function App(){
       tab==='plano'&&h(Plano,{days,me,save,flash,openLightbox:setLightbox}),
       tab==='feed'&&h(Feed,{posts,me,meU,flash}),
       tab==='comida'&&h(Comida,{foods,me,save}),
-      tab==='poncha'&&h(Poncha,{bars,me,save,flash}),
+      tab==='poncha'&&h(Poncha,{bars,rests,me,save,flash}),
       tab==='video'&&h(Video,{days,posts})),
     h(TabBar,{tab,setTab:changeTab}),
     toast&&h('div',{className:'toast'},toast),
@@ -434,25 +479,51 @@ function InstallBanner(){
   );
 }
 
-function Setup({onDone}){
+const WEEKDAYS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MONTHS3=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MONTHS_FULL=['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+
+// recalcula as datas/dia-da-semana dos dias do roteiro a partir de uma data de início
+function relabelDays(days, startISO){
+  if(!startISO) return days;
+  const [y,m,d]=startISO.split('-').map(Number);
+  return days.map((day,i)=>{
+    const dt=new Date(y,m-1,d+i);
+    return {...day, date: dt.getDate()+' '+MONTHS3[dt.getMonth()], label: WEEKDAYS[dt.getDay()]};
+  });
+}
+// gera o texto "4 – 8 JUNHO 2026" a partir de início e nº de dias
+function datesLabel(startISO, n){
+  if(!startISO) return '';
+  const [y,m,d]=startISO.split('-').map(Number);
+  const a=new Date(y,m-1,d), b=new Date(y,m-1,d+n-1);
+  const sameMonth=a.getMonth()===b.getMonth();
+  if(sameMonth) return `${a.getDate()} – ${b.getDate()} ${MONTHS_FULL[a.getMonth()]} ${y}`;
+  return `${a.getDate()} ${MONTHS3[a.getMonth()].toUpperCase()} – ${b.getDate()} ${MONTHS3[b.getMonth()].toUpperCase()} ${y}`;
+}
+
+function Setup({nDays,onDone}){
   const [u1,setU1]=useState(DEFAULT_CONFIG.u1name);
   const [u2,setU2]=useState(DEFAULT_CONFIG.u2name);
-  const [dates,setDates]=useState(DEFAULT_CONFIG.dates);
+  const [start,setStart]=useState('');
   const [subtitle,setSubtitle]=useState(DEFAULT_CONFIG.subtitle);
   const go=()=>{
     if(!u1.trim()||!u2.trim()) return;
-    onDone({u1name:u1.trim(),u2name:u2.trim(),dates:dates.trim(),subtitle:subtitle.trim()});
+    onDone({u1name:u1.trim(),u2name:u2.trim(),start,
+      dates:start?datesLabel(start,nDays):'',subtitle:subtitle.trim()});
   };
-  return h('div',{className:'scr',style:{paddingTop:'12vh'}},
+  return h('div',{className:'scr',style:{paddingTop:'10vh'}},
     h('h1',{className:'display center',style:{fontSize:44,fontWeight:700,margin:'0 0 4px'}},'Madeira'),
-    h('p',{className:'center muted',style:{marginBottom:30,fontSize:14.5}},
+    h('p',{className:'center muted',style:{marginBottom:28,fontSize:14.5}},
       'Vamos preparar a vossa viagem'),
     h('label',{className:'fld'},'Nome do 1º viajante'),
     h('input',{value:u1,onChange:e=>setU1(e.target.value),placeholder:'Ex.: Raquel',autoFocus:true}),
     h('label',{className:'fld'},'Nome do 2º viajante'),
     h('input',{value:u2,onChange:e=>setU2(e.target.value),placeholder:'Ex.: António'}),
-    h('label',{className:'fld'},'Datas da viagem (opcional)'),
-    h('input',{value:dates,onChange:e=>setDates(e.target.value),placeholder:'Ex.: 4 – 7 JUNHO 2026'}),
+    h('label',{className:'fld'},'Data de início da viagem'),
+    h('input',{type:'date',value:start,onChange:e=>setStart(e.target.value)}),
+    start&&h('p',{className:'muted',style:{margin:'6px 2px 0',fontSize:12.5}},
+      'A viagem tem '+nDays+' dias: '+datesLabel(start,nDays)+'. As datas do roteiro são ajustadas automaticamente.'),
     h('label',{className:'fld'},'Subtítulo (opcional)'),
     h('input',{value:subtitle,onChange:e=>setSubtitle(e.target.value),
       placeholder:'Ex.: Raquel e António · com o Bobi'}),
@@ -762,29 +833,34 @@ function VoteSheet({f,me,onClose,onVote}){
 }
 
 /* ---------- ROTA DA PONCHA (mapa híbrido Leaflet) ---------- */
-function Poncha({bars,me,save,flash}){
+function Poncha({bars,rests,me,save,flash}){
   const mapEl=useRef(null), mapObj=useRef(null), markers=useRef({});
-  const [mode,setMode]=useState('conquista'); // conquista | nota
+  const [view,setView]=useState('poncha');   // poncha | rest
+  const [mode,setMode]=useState('conquista'); // (poncha) conquista | nota
   const [active,setActive]=useState(null);
   const [zona,setZona]=useState('todas');
-  const [sort,setSort]=useState('zona'); // zona | az | melhor | pior | porprovar
-  const [showFilters,setShowFilters]=useState(false);
+  const [cat,setCat]=useState('todas');       // (rest) categoria
+  const [sort,setSort]=useState('zona');
   const itemRefs=useRef({});
   const geocoding=useRef(false);
+  const [voteFor,setVoteFor]=useState(null);
+
+  const isRest = view==='rest';
+  const items = isRest ? rests : bars;
 
   const tried=bars.filter(b=>b.votes&&Object.keys(b.votes).length).length;
   const pct=Math.round(tried/bars.length*100);
+  const restTried=rests.filter(r=>r.votes&&Object.keys(r.votes).length).length;
 
-  // zonas disponíveis (ordenadas por frequência)
-  const zonas=(()=>{ const c={}; bars.forEach(b=>{if(b.zona)c[b.zona]=(c[b.zona]||0)+1});
+  const zonas=(()=>{ const c={}; items.forEach(b=>{if(b.zona)c[b.zona]=(c[b.zona]||0)+1});
     return Object.keys(c).sort((a,b)=>c[b]-c[a]); })();
 
   const myAvg=(b)=>{const vs=b.votes?Object.values(b.votes).map(v=>v.val).filter(v=>v!=null):[];
     return vs.length?vs.reduce((a,c)=>a+c,0)/vs.length:null};
 
-  // lista filtrada + ordenada
   const visible=(()=>{
-    let list=bars.filter(b=>zona==='todas'||b.zona===zona);
+    let list=items.filter(b=>zona==='todas'||b.zona===zona);
+    if(isRest && cat!=='todas') list=list.filter(r=>r.cat===cat);
     const av=(b)=>{const a=myAvg(b);return a!=null?a:(b.gRating??-1)};
     if(sort==='az') list=[...list].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
     else if(sort==='melhor') list=[...list].sort((a,b)=>av(b)-av(a));
@@ -792,120 +868,109 @@ function Poncha({bars,me,save,flash}){
     else if(sort==='porprovar') list=[...list].sort((a,b)=>{
       const da=a.votes&&Object.keys(a.votes).length?1:0, db=b.votes&&Object.keys(b.votes).length?1:0;
       return da-db;});
-    else { // por zona (agrupado), depois alfabético
-      list=[...list].sort((a,b)=>(a.zona||'').localeCompare(b.zona||'','pt')||a.name.localeCompare(b.name,'pt'));
-    }
+    else if(isRest && sort==='zona') // restaurantes: agrupa por categoria
+      list=[...list].sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||a.name.localeCompare(b.name,'pt'));
+    else list=[...list].sort((a,b)=>(a.zona||'').localeCompare(b.zona||'','pt')||a.name.localeCompare(b.name,'pt'));
     return list;
   })();
 
-  const avg=myAvg;
-  const pinColor=(b)=>{ const done=b.votes&&Object.keys(b.votes).length;
+  const pinColor=(b)=>{
+    if(isRest){ return (REST_CAT[b.cat]?.color)||'oklch(0.6 0.02 160)'; }
+    const done=b.votes&&Object.keys(b.votes).length;
     if(mode==='conquista') return done?'oklch(0.58 0.13 156)':'oklch(0.72 0.018 160)';
-    const a=avg(b); if(a==null) return 'oklch(0.80 0.018 160)';
-    // mapa de calor: vermelho(0)→dourado(5)→verde(10)
+    const a=myAvg(b); if(a==null) return 'oklch(0.80 0.018 160)';
     const hue=25+(a/10)*(150-25); return `oklch(0.62 0.16 ${hue})`;
   };
 
-  // inicializar mapa Leaflet
   useEffect(()=>{ if(mapObj.current||!window.L||!mapEl.current)return;
     const L=window.L;
-    const map=L.map(mapEl.current,{zoomControl:false,attributionControl:false})
-      .setView([32.76,-16.96],10.2);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      {maxZoom:19}).addTo(map);
+    const map=L.map(mapEl.current,{zoomControl:false,attributionControl:false}).setView([32.76,-16.96],10.2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
     L.control.zoom({position:'bottomright'}).addTo(map);
     mapObj.current=map;
     return ()=>{map.remove();mapObj.current=null};
   },[]);
 
-  // (re)desenhar marcadores quando bars/mode mudam
+  // redesenhar marcadores quando muda view/mode/dados — limpa e recria
   useEffect(()=>{ const L=window.L,map=mapObj.current; if(!L||!map)return;
-    bars.forEach(b=>{ if(b.lat==null||b.lng==null)return;
-      const color=pinColor(b);
-      if(markers.current[b.id]){
-        markers.current[b.id].setIcon(makeIcon(L,color));
-      }else{
-        const mk=L.marker([b.lat,b.lng],{icon:makeIcon(L,color)}).addTo(map);
-        mk.on('click',()=>{ setActive(b.id);
-          const el=itemRefs.current[b.id];
-          if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); });
-        mk.bindPopup(popupHtml(b));
-        markers.current[b.id]=mk;
-      }
-      markers.current[b.id].setPopupContent(popupHtml(b));
+    Object.values(markers.current).forEach(m=>map.removeLayer(m)); markers.current={};
+    items.forEach(b=>{ if(b.lat==null||b.lng==null)return;
+      const mk=L.marker([b.lat,b.lng],{icon:makeIcon(L,pinColor(b))}).addTo(map);
+      mk.on('click',()=>{ setActive(b.id);
+        const el=itemRefs.current[b.id]; if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); });
+      mk.bindPopup(popupHtml(b,isRest));
+      markers.current[b.id]=mk;
     });
-  },[bars,mode]);
+  },[items,mode,view]);
 
-  // geocodificar bares sem coordenadas (uma vez, no browser)
-  useEffect(()=>{ if(geocoding.current)return;
+  // geocodificar bares sem coordenadas (só no modo poncha)
+  useEffect(()=>{ if(isRest||geocoding.current)return;
     const missing=bars.filter(b=>b.lat==null||b.lng==null);
     if(!missing.length)return;
     geocoding.current=true;
-    (async()=>{
-      const updated=structuredClone(bars);
-      let changed=false, count=0;
+    (async()=>{ const updated=structuredClone(bars); let changed=false,count=0;
       for(const b of missing){
-        if(count>=missing.length)break;
-        try{
-          const q=encodeURIComponent(b.name+', Madeira, Portugal');
-          const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-            {headers:{'Accept':'application/json'}});
+        try{ const q=encodeURIComponent(b.name+', Madeira, Portugal');
+          const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,{headers:{'Accept':'application/json'}});
           const j=await r.json();
-          if(j&&j[0]){ const idx=updated.findIndex(x=>x.id===b.id);
-            updated[idx].lat=+j[0].lat; updated[idx].lng=+j[0].lon; changed=true; }
+          if(j&&j[0]){const idx=updated.findIndex(x=>x.id===b.id);updated[idx].lat=+j[0].lat;updated[idx].lng=+j[0].lon;changed=true;}
         }catch(e){}
-        count++;
-        await new Promise(r=>setTimeout(r,1100)); // respeitar limite Nominatim
-        // guarda progresso a cada 10
-        if(changed && count%10===0){ await save({bars:updated}); }
+        count++; await new Promise(r=>setTimeout(r,1100));
+        if(changed&&count%10===0){await save({bars:updated});}
       }
-      if(changed) await save({bars:updated});
-      geocoding.current=false;
+      if(changed)await save({bars:updated}); geocoding.current=false;
     })();
-  },[bars.length]);
+  },[bars.length,isRest]);
 
-  const toggle=(b)=>{ // marca como provado/não (sem voto)
-    const nb=structuredClone(bars);const x=nb.find(y=>y.id===b.id);
+  const toggle=(b)=>{ const key=isRest?'rests':'bars'; const arr=isRest?rests:bars;
+    const nb=structuredClone(arr);const x=nb.find(y=>y.id===b.id);
     x.votes=x.votes||{};
-    if(x.votes[me]){ delete x.votes[me]; } else { x.votes[me]={val:x.votes[me]?.val??null,ts:Date.now()}; }
-    save({bars:nb});
-  };
-  const [voteFor,setVoteFor]=useState(null);
-  const setVote=(bid,val)=>{const nb=structuredClone(bars);const x=nb.find(y=>y.id===bid);
-    x.votes=x.votes||{};x.votes[me]={val,ts:Date.now()};save({bars:nb})};
+    if(x.votes[me]){delete x.votes[me];}else{x.votes[me]={val:x.votes[me]?.val??null,ts:Date.now()};}
+    save({[key]:nb}); };
+  const setVote=(id,val)=>{ const key=isRest?'rests':'bars'; const arr=isRest?rests:bars;
+    const nb=structuredClone(arr);const x=nb.find(y=>y.id===id);
+    x.votes=x.votes||{};x.votes[me]={val,ts:Date.now()};save({[key]:nb}); };
 
   return h('div',{className:'scr'},
+    // toggle principal: Poncha vs Restaurantes
+    h('div',{className:'seg',style:{marginBottom:12}},
+      h('button',{className:view==='poncha'?'on':'',onClick:()=>{setView('poncha');setZona('todas');setActive(null);}},'🍹 Poncha'),
+      h('button',{className:view==='rest'?'on':'',onClick:()=>{setView('rest');setZona('todas');setActive(null);}},'🍽 Restaurantes')),
     h('div',{className:'poncha-map'},
       h('div',{ref:mapEl,style:{width:'100%',height:'100%'}}),
-      h('div',{className:'map-toggle'},
+      !isRest&&h('div',{className:'map-toggle'},
         h('button',{className:mode==='conquista'?'on':'',onClick:()=>setMode('conquista')},'Conquista'),
         h('button',{className:mode==='nota'?'on':'',onClick:()=>setMode('nota')},'Nota'))),
     h('div',{className:'poncha-stat'},
-      h('div',{className:'pct'},pct+'%'),
+      h('div',{className:'pct'}, isRest?restTried:(pct+'%')),
       h('div',{style:{flex:1}},
-        h('div',{className:'lbl'},tried+' de '+bars.length+' bares conquistados'),
-        h('div',{className:'bar'},h('span',{style:{width:pct+'%'}})))),
-    // controlos de filtro/ordenação
+        h('div',{className:'lbl'}, isRest
+          ? restTried+' de '+rests.length+' restaurantes provados'
+          : tried+' de '+bars.length+' bares conquistados'),
+        h('div',{className:'bar'},h('span',{style:{width:(isRest?Math.round(restTried/rests.length*100):pct)+'%'}})))),
+    // filtros
     h('div',{style:{display:'flex',gap:8,marginBottom:12}},
-      h('select',{value:zona,onChange:e=>setZona(e.target.value),
-        style:{flex:1,padding:'10px 12px',fontSize:14}},
+      h('select',{value:zona,onChange:e=>setZona(e.target.value),style:{flex:1,padding:'10px 12px',fontSize:14}},
         h('option',{value:'todas'},'Todas as zonas'),
         zonas.map(z=>h('option',{key:z,value:z},z))),
-      h('select',{value:sort,onChange:e=>setSort(e.target.value),
-        style:{flex:1,padding:'10px 12px',fontSize:14}},
-        h('option',{value:'zona'},'Por zona'),
-        h('option',{value:'az'},'A → Z'),
-        h('option',{value:'melhor'},'Melhor nota'),
-        h('option',{value:'pior'},'Pior nota'),
-        h('option',{value:'porprovar'},'Por provar'))),
+      isRest
+        ? h('select',{value:cat,onChange:e=>setCat(e.target.value),style:{flex:1,padding:'10px 12px',fontSize:14}},
+            h('option',{value:'todas'},'Todos os tipos'),
+            Object.entries(REST_CAT).map(([k,c])=>h('option',{key:k,value:k},c.label)))
+        : h('select',{value:sort,onChange:e=>setSort(e.target.value),style:{flex:1,padding:'10px 12px',fontSize:14}},
+            h('option',{value:'zona'},'Por zona'),h('option',{value:'az'},'A → Z'),
+            h('option',{value:'melhor'},'Melhor nota'),h('option',{value:'pior'},'Pior nota'),
+            h('option',{value:'porprovar'},'Por provar'))),
     h('div',{className:'card'},
       visible.map((b,i)=>{
-        const showZona = sort==='zona' && (i===0||visible[i-1].zona!==b.zona);
+        const groupKey = isRest ? b.cat : b.zona;
+        const prevKey = i>0 ? (isRest?visible[i-1].cat:visible[i-1].zona) : null;
+        const showHeader = ((isRest&&sort==='zona')||(!isRest&&sort==='zona')) && (i===0||prevKey!==groupKey);
+        const headerLabel = isRest ? (REST_CAT[b.cat]?.label||'Outros') : (b.zona||'Sem zona');
         return h(React.Fragment,{key:b.id},
-          showZona&&h('div',{style:{padding:'10px 16px 4px',fontSize:12,fontWeight:700,
-            color:'var(--brand-d)',textTransform:'uppercase',letterSpacing:'.04em',
-            background:'var(--brand-pa)'}},b.zona||'Sem zona'),
-          h(BarItem,{b,me,active:active===b.id,
+          showHeader&&h('div',{style:{padding:'10px 16px 4px',fontSize:12,fontWeight:700,
+            color:'var(--brand-d)',textTransform:'uppercase',letterSpacing:'.04em',background:'var(--brand-pa)'}},headerLabel),
+          h(BarItem,{b,me,isRest,active:active===b.id,
             setRef:(el)=>itemRefs.current[b.id]=el,
             onToggle:()=>toggle(b),onVote:()=>setVoteFor(b)}));
       })),
@@ -917,15 +982,16 @@ function makeIcon(L,color){
   return L.divIcon({className:'',html:`<div class="pin" style="background:${color}"></div>`,
     iconSize:[24,24],iconAnchor:[12,22],popupAnchor:[0,-20]});
 }
-function popupHtml(b){
+function popupHtml(b,isRest){
   const v=b.votes||{};
   const chip=(uk)=>v[uk]?.val!=null?`<span class="popup-v" style="background:${uk==='rui'?'var(--rui-pa)':'var(--rita-pa)'};color:${uk==='rui'?'var(--rui)':'var(--rita)'}">${USERS[uk].name} ${v[uk].val}</span>`:'';
-  return `<div class="popup-name">${b.name}</div>`+
-    (b.zona?`<div class="popup-zona">${b.zona}</div>`:'')+
+  const sub = isRest && REST_CAT[b.cat] ? REST_CAT[b.cat].label+' · '+(b.zona||'') : (b.zona||'');
+  return `<div class="popup-name">${b.name}${b.gRating?' <span style="color:#caa400">★'+b.gRating+'</span>':''}</div>`+
+    (sub?`<div class="popup-zona">${sub}</div>`:'')+
     `<div class="popup-votes">${chip('rui')}${chip('rita')}</div>`;
 }
 
-function BarItem({b,me,active,setRef,onToggle,onVote}){
+function BarItem({b,me,isRest,active,setRef,onToggle,onVote}){
   const v=b.votes||{};
   const done=Object.keys(v).length>0;
   const sq=uk=>{const val=v[uk]?.val,isYou=uk===me,has=val!=null;
@@ -934,12 +1000,17 @@ function BarItem({b,me,active,setRef,onToggle,onVote}){
       onClick:isYou?onVote:undefined},
       h('div',{className:'v',style:{fontSize:15}},has?val:(isYou?'+':'·')),
       h('div',{className:'l'},USERS[uk].name))};
+  const catInfo = isRest ? REST_CAT[b.cat] : null;
   return h('div',{className:'bar-item'+(active?' active':''),ref:setRef},
     h('div',{className:'bar-tick'+(done?' on':''),onClick:onToggle},h(Icon,{d:ICONS.check,size:14})),
     h('div',{className:'bar-info'},
       h('div',{className:'bar-name'},b.name,
         b.gRating&&h('span',{className:'bar-rating'},'★ '+b.gRating)),
-      b.zona&&h('div',{className:'bar-zona'},b.zona),
+      h('div',{className:'bar-zona'},
+        catInfo&&h('span',{style:{display:'inline-block',padding:'1px 7px',borderRadius:6,
+          fontSize:10.5,fontWeight:700,color:'#fff',background:catInfo.color,marginRight:6}},catInfo.label),
+        b.zona),
+      isRest&&b.tip&&h('div',{className:'bar-tip'},b.tip),
       h('div',{className:'bar-actions'},
         h('a',{className:'bar-mini',href:mapsUrl(b.name),target:'_blank',rel:'noopener'},
           h(Icon,{d:ICONS.pin,size:13}),'Maps'),
@@ -967,6 +1038,44 @@ function BarVoteSheet({b,me,onClose,onVote}){
 }
 
 /* ---------- MONTAGEM ---------- */
+// quebra texto em várias linhas no canvas
+function wrapText(ctx,text,x,y,maxW,lh){
+  const words=(text||'').split(' '); let line='',lines=[];
+  for(const w of words){ const test=line?line+' '+w:w;
+    if(ctx.measureText(test).width>maxW && line){lines.push(line);line=w;} else line=test; }
+  if(line)lines.push(line);
+  lines=lines.slice(-2); // no máx 2 linhas
+  const startY=y-(lines.length-1)*lh;
+  lines.forEach((ln,i)=>ctx.fillText(ln,x,startY+i*lh));
+}
+// constrói a batida tropical num AudioContext (para tocar OU gravar)
+function buildMusic(ctx,destination,nPhotos){
+  const beatMs=600; // 100 BPM
+  const chord=[[262,330,392],[294,370,440],[247,294,392],[262,330,392]];
+  const master=ctx.createGain(); master.gain.value=0.16;
+  master.connect(destination||ctx.destination);
+  const state={stop:false,timer:null};
+  let t=ctx.currentTime;
+  const loop=()=>{ if(state.stop) return;
+    chord.forEach(notes=>{
+      notes.forEach(f=>{ const o=ctx.createOscillator(),g=ctx.createGain();
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.5,t+0.05);
+        g.gain.linearRampToValueAtTime(0,t+beatMs*4/1000*0.95);
+        o.connect(g); g.connect(master); o.start(t); o.stop(t+beatMs*4/1000); });
+      for(let b=0;b<4;b++){ const k=ctx.createOscillator(),kg=ctx.createGain();
+        const kt=t+b*beatMs/1000;
+        k.type='sine'; k.frequency.setValueAtTime(140,kt); k.frequency.exponentialRampToValueAtTime(50,kt+0.12);
+        kg.gain.setValueAtTime(0.7,kt); kg.gain.exponentialRampToValueAtTime(0.01,kt+0.16);
+        k.connect(kg); kg.connect(master); k.start(kt); k.stop(kt+0.18); }
+      t+=beatMs*4/1000;
+    });
+    state.timer=setTimeout(loop, beatMs*16*0.9);
+  };
+  loop();
+  return state;
+}
+
 function Video({days,posts}){
   const [playing,setPlaying]=useState(false);
   const [idx,setIdx]=useState(0);
@@ -974,6 +1083,8 @@ function Video({days,posts}){
   const [music,setMusic]=useState(true);
   const [order,setOrder]=useState([]);
   const [beat,setBeat]=useState(false);
+  const [rec,setRec]=useState(false);       // a gravar?
+  const [recPct,setRecPct]=useState(0);
   const audioRef=useRef(null);
   const stepRef=useRef(null);
 
@@ -991,39 +1102,14 @@ function Video({days,posts}){
   const shuffle=(n)=>{const a=[...Array(n).keys()];
     for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
-  // música genérica via Web Audio (batida tropical simples, sem ficheiro externo)
+  // música genérica via Web Audio (usa o helper buildMusic)
   const startMusic=()=>{ if(!music) return;
-    try{
-      const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return;
-      const ctx=new Ctx(); audioRef.current={ctx,nodes:[],stop:false};
-      const now=ctx.currentTime;
-      // pads tropicais (acordes suaves em loop)
-      const chord=[[262,330,392],[294,370,440],[247,294,392],[262,330,392]]; // C Em-ish Bm-ish C
-      const master=ctx.createGain(); master.gain.value=0.16; master.connect(ctx.destination);
-      let t=now;
-      const loopBars=()=>{ if(audioRef.current?.stop) return;
-        chord.forEach((notes,bar)=>{
-          notes.forEach(f=>{ const o=ctx.createOscillator(),g=ctx.createGain();
-            o.type='sine'; o.frequency.value=f;
-            g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.5,t+0.05);
-            g.gain.linearRampToValueAtTime(0,t+beatMs*4/1000*0.95);
-            o.connect(g); g.connect(master); o.start(t); o.stop(t+beatMs*4/1000);
-          });
-          // kick em cada batida
-          for(let b=0;b<4;b++){ const k=ctx.createOscillator(),kg=ctx.createGain();
-            const kt=t+b*beatMs/1000;
-            k.type='sine'; k.frequency.setValueAtTime(140,kt); k.frequency.exponentialRampToValueAtTime(50,kt+0.12);
-            kg.gain.setValueAtTime(0.7,kt); kg.gain.exponentialRampToValueAtTime(0.01,kt+0.16);
-            k.connect(kg); kg.connect(master); k.start(kt); k.stop(kt+0.18);
-          }
-          t+=beatMs*4/1000;
-        });
-        audioRef.current.timer=setTimeout(loopBars, beatMs*16*0.9);
-      };
-      loopBars();
+    try{ const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return;
+      const ctx=new Ctx(); const state=buildMusic(ctx,null,all.length);
+      audioRef.current={ctx,state};
     }catch(e){}
   };
-  const stopMusic=()=>{ const a=audioRef.current; if(a){a.stop=true;clearTimeout(a.timer);
+  const stopMusic=()=>{ const a=audioRef.current; if(a){ if(a.state){a.state.stop=true;clearTimeout(a.state.timer);}
     try{a.ctx.close()}catch(e){} audioRef.current=null;} };
 
   const play=()=>{ if(all.length===0) return;
@@ -1041,6 +1127,83 @@ function Video({days,posts}){
   },[playing,order]);
 
   useEffect(()=>()=>stopMusic(),[]); // limpa música ao sair
+
+  // gravar o reel para um ficheiro (canvas + MediaRecorder). Pode falhar no iOS Safari.
+  const download=async()=>{
+    if(rec||all.length===0) return;
+    const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream){
+      alert('O teu browser não permite gravar vídeo aqui. Usa a gravação de ecrã do telemóvel durante a reprodução.');
+      return;
+    }
+    setRec(true); setRecPct(0);
+    try{
+      const W=720,H=1280; // formato vertical (reel)
+      const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+      const ctx=canvas.getContext('2d');
+      const seq=shuffle(all.length);
+      // pré-carregar imagens
+      const imgs=await Promise.all(seq.map(i=>new Promise((res)=>{
+        const im=new Image(); im.crossOrigin='anonymous';
+        im.onload=()=>res(im); im.onerror=()=>res(null); im.src=all[i].url;
+      })));
+      const stream=canvas.captureStream(30);
+      // tentar juntar música à gravação
+      let actx;
+      try{ if(music){ const Ctx=window.AudioContext||window.webkitAudioContext;
+        actx=new Ctx(); const dest=actx.createMediaStreamDestination();
+        buildMusic(actx,dest,all.length); // toca para a gravação
+        dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+      } }catch(e){}
+      const mime=['video/mp4;codecs=h264','video/webm;codecs=vp9','video/webm']
+        .find(m=>MediaRecorder.isTypeSupported(m))||'video/webm';
+      const mr=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6_000_000});
+      const chunks=[]; mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+      const done=new Promise(r=>{mr.onstop=r;});
+      mr.start();
+      const per=Math.max(900, cutMs); // duração por foto
+      const draw=(im,t,cap,day)=>{
+        ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+        if(im){ // cover + leve zoom (Ken Burns)
+          const z=1.06+0.10*t;
+          const r=Math.max(W/im.width,H/im.height)*z;
+          const w=im.width*r,hh=im.height*r;
+          ctx.drawImage(im,(W-w)/2,(H-hh)/2 - 20*t, w,hh);
+        }
+        // gradiente inferior + legenda
+        const g=ctx.createLinearGradient(0,H-360,0,H);
+        g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,0.82)');
+        ctx.fillStyle=g; ctx.fillRect(0,H-360,W,360);
+        ctx.fillStyle='#fff'; ctx.font='700 46px Inter, sans-serif'; ctx.textBaseline='alphabetic';
+        wrapText(ctx,cap||'',40,H-120,W-80,52);
+        ctx.fillStyle='rgba(255,255,255,.8)'; ctx.font='600 30px Inter, sans-serif';
+        ctx.fillText(day||'',40,H-70);
+      };
+      // loop de render
+      for(let k=0;k<imgs.length;k++){
+        const start=performance.now();
+        await new Promise(resolve=>{
+          const step=()=>{ const t=Math.min(1,(performance.now()-start)/per);
+            draw(imgs[k],t,all[seq[k]].cap,all[seq[k]].day);
+            if(t<1) requestAnimationFrame(step); else resolve(); };
+          requestAnimationFrame(step);
+        });
+        setRecPct(Math.round((k+1)/imgs.length*100));
+      }
+      mr.stop(); await done;
+      try{actx&&actx.close();}catch(e){}
+      const blob=new Blob(chunks,{type:mime});
+      const ext=mime.includes('mp4')?'mp4':'webm';
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='madeira-reel.'+ext;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      if(isIOS) setTimeout(()=>alert('Vídeo gerado. Se o iPhone não o guardou, abre o ficheiro descarregado e usa "Guardar vídeo".'),300);
+    }catch(e){ console.error(e);
+      alert('Não foi possível gerar o vídeo neste dispositivo. Em alternativa, usa a gravação de ecrã durante a reprodução.');
+    }
+    setRec(false);
+  };
 
   if(all.length===0) return h('div',{className:'scr'},
     h('div',{className:'empty'},h(Icon,{d:ICONS.play,size:40}),
@@ -1079,9 +1242,11 @@ function Video({days,posts}){
       h('button',{className:'btn'+(music?'':' ghost'),style:{flex:1},
         onClick:()=>setMusic(m=>!m)}, music?'♪ Música ligada':'Música desligada'),
       h('button',{className:'btn ghost',style:{flex:1},onClick:play},'Recomeçar')),
+    h('button',{className:'btn',style:{marginTop:8,width:'100%'},disabled:rec,onClick:download},
+      rec?('A gerar vídeo… '+recPct+'%'):'⬇  Descarregar vídeo'),
     h('div',{className:'strip'},all.map((p,i)=>h('img',{key:i,src:p.url,onClick:play}))),
     h('div',{className:'muted center',style:{marginTop:14,padding:'0 24px'}},
-      'O reel baralha as fotos e corta ao ritmo. Para guardar, grava o ecrã durante a reprodução.')
+      'O reel baralha as fotos e corta ao ritmo. O download gera um ficheiro de vídeo — no iPhone pode não funcionar; aí usa a gravação de ecrã durante a reprodução.')
   );
 }
 
