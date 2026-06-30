@@ -296,6 +296,41 @@ textarea{resize:vertical;min-height:56px;line-height:1.45}
 .cinema{background:#000;border-radius:var(--r-lg);overflow:hidden;position:relative;
   box-shadow:var(--shadow-lg)}
 .cinema img{width:100%;height:420px;object-fit:cover;display:block;animation:fadeplain .6s}
+/* modo reel: cortes rápidos com transições variadas */
+.reel{position:relative;width:100%;height:520px;background:#000;border-radius:var(--r-lg);
+  overflow:hidden;box-shadow:var(--shadow-lg)}
+.reel.full{position:fixed;inset:0;height:100vh;width:100%;max-width:500px;left:50%;
+  transform:translateX(-50%);border-radius:0;z-index:300}
+.reel-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.reel-cap{position:absolute;inset:auto 0 0 0;padding:60px 20px 28px;z-index:3;
+  background:linear-gradient(transparent,oklch(0 0 0 / .82))}
+.reel-cap .pl{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:700;color:#fff;
+  text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.reel-cap .dy{font-size:13px;color:oklch(1 0 0 / .85);margin-top:3px;font-weight:600}
+.reel-progress{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:4px;z-index:4}
+.reel-progress .seg{flex:1;height:3px;background:oklch(1 0 0 / .3);border-radius:3px;overflow:hidden}
+.reel-progress .seg>span{display:block;height:100%;background:#fff;width:0}
+.reel-progress .seg.done>span{width:100%}
+.reel-progress .seg.active>span{animation:fillbar linear forwards}
+@keyframes fillbar{from{width:0}to{width:100%}}
+/* transições */
+@keyframes kb1{from{transform:scale(1.18) translate(2%,-2%)}to{transform:scale(1) translate(0,0)}}
+@keyframes kb2{from{transform:scale(1) translate(-2%,2%)}to{transform:scale(1.18) translate(0,0)}}
+@keyframes kb3{from{transform:scale(1.15)}to{transform:scale(1)}}
+@keyframes slideL{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes slideU{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes punch{0%{transform:scale(1.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.fx0{animation:kb1 var(--dur) ease-out both}
+.fx1{animation:kb2 var(--dur) ease-out both}
+.fx2{animation:kb3 var(--dur) ease-out both, fadeplain .35s both}
+.fx3{animation:slideL .45s cubic-bezier(.22,1,.36,1) both, kb3 var(--dur) ease-out both}
+.fx4{animation:slideU .45s cubic-bezier(.22,1,.36,1) both, kb1 var(--dur) ease-out both}
+.fx5{animation:punch .4s cubic-bezier(.22,1,.36,1) both, kb2 var(--dur) ease-out both}
+.reel-controls{display:flex;gap:8px;padding:12px 0 0}
+.beat-dot{position:absolute;top:12px;right:14px;z-index:5;width:9px;height:9px;border-radius:50%;
+  background:var(--brand);box-shadow:0 0 0 0 var(--brand)}
+.beat-dot.on{animation:beatpulse .4s ease-out}
+@keyframes beatpulse{0%{box-shadow:0 0 0 0 oklch(0.58 0.13 156 / .7)}100%{box-shadow:0 0 0 14px oklch(0.58 0.13 156 / 0)}}
 .cinema .ov{position:absolute;inset:auto 0 0 0;padding:40px 18px 18px;
   background:linear-gradient(transparent,oklch(0 0 0 / .8))}
 .cinema .ov .pl{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:600;

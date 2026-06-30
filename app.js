@@ -40,8 +40,8 @@ const TRIP_PROFILES = {
     u1:{ name:"Rui",  initial:"R", color:"oklch(0.55 0.20 295)" },
     u2:{ name:"Rita", initial:"R", color:"oklch(0.62 0.11 184)" },
   },
-  // viagem da irmã: abre com ?trip=irma
-  madeira_irma: {
+  // viagem da Raquel: abre com ?trip=raquel
+  madeira_raquel: {
     u1:{ name:"Raquel",  initial:"R", color:"oklch(0.55 0.20 295)" },
     u2:{ name:"António", initial:"A", color:"oklch(0.62 0.11 184)" },
   },
@@ -51,9 +51,25 @@ const PROFILE = TRIP_PROFILES[TRIP_ID] || {
   u1:{ name:"Viajante 1", initial:"1", color:"oklch(0.55 0.20 295)" },
   u2:{ name:"Viajante 2", initial:"2", color:"oklch(0.62 0.11 184)" },
 };
-// mantém as chaves 'rui'/'rita' internamente (votos já guardados dependem delas),
-// mas os nomes/cores mostrados vêm do perfil da viagem.
-const USERS = { rui: PROFILE.u1, rita: PROFILE.u2 };
+// utilizadores da viagem atual — começam com o perfil base, mas são
+// substituídos pela config guardada no Firebase (nomes escolhidos pelo utilizador).
+const USERS = { rui: {...PROFILE.u1}, rita: {...PROFILE.u2} };
+
+// config por defeito (usada como sugestão no ecrã de setup)
+const DEFAULT_CONFIG = {
+  u1name: PROFILE.u1.name!=='Viajante 1'?PROFILE.u1.name:'',
+  u2name: PROFILE.u2.name!=='Viajante 2'?PROFILE.u2.name:'',
+  dates: '', subtitle: ''
+};
+
+// aplica a config aos USERS (nomes + iniciais), mantendo as cores e as chaves internas
+function applyConfig(cfg){
+  if(!cfg) return;
+  USERS.rui.name = cfg.u1name || 'Viajante 1';
+  USERS.rui.initial = (cfg.u1name||'V').trim().charAt(0).toUpperCase();
+  USERS.rita.name = cfg.u2name || 'Viajante 2';
+  USERS.rita.initial = (cfg.u2name||'V').trim().charAt(0).toUpperCase();
+}
 const TYPES = ["passeio","praia","miradouro","levada","comida","experiência","histórico","natureza","noite","base","voo"];
 
 const toMin = (t)=>{ if(!t) return 99999; const m=/^(\d{1,2}):(\d{2})$/.exec(t.trim());
@@ -295,6 +311,7 @@ function App(){
   const [uid,setUid]=useState(null);
   const [me,setMe]=useState(localStorage.getItem('madeira_me_'+TRIP_ID)||null);
   const [tab,setTab]=useState('plano');
+  const [config,setConfig]=useState(undefined); // undefined=a carregar, null=por definir, obj=definida
   const [days,setDays]=useState(null);
   const [foods,setFoods]=useState(null);
   const [bars,setBars]=useState(null);
@@ -315,6 +332,17 @@ function App(){
         itinVersion:ITIN_VERSION,barsVersion:BARS_VERSION,foodsVersion:FOODS_VERSION,
         createdAt:serverTimestamp()})});
     const u1=onSnapshot(ref,s=>{if(s.exists()){const dt=s.data();
+      // config da viagem (nomes, datas, subtítulo). Se existir, aplica aos USERS.
+      if(dt.config){ applyConfig(dt.config); setConfig(dt.config); }
+      else if(TRIP_PROFILES[TRIP_ID]){
+        // viagem com perfil pré-definido (ex.: a tua, ou a da Raquel) → cria config automática
+        const p=TRIP_PROFILES[TRIP_ID];
+        const auto={u1name:p.u1.name,u2name:p.u2.name,
+          dates:TRIP_ID==='madeira2026'?'18 – 22 JUNHO 2026':'',
+          subtitle:TRIP_ID==='madeira2026'?'Rui e Rita · com o Troy':''};
+        applyConfig(auto); updateDoc(ref,{config:auto}).catch(()=>{}); setConfig(auto);
+      }
+      else { setConfig(null); }
       // migração do itinerário: se a versão mudou, re-semear preservando fotos por nome de local
       let savedDays=dt.days||[];
       if(dt.itinVersion!==ITIN_VERSION){
@@ -357,8 +385,15 @@ function App(){
 
   const changeTab=(t)=>{ setTab(t); if(scrollRef.current)scrollRef.current.scrollTop=0; window.scrollTo(0,0); };
 
-  if(!uid||days===null||foods===null||bars===null) return h('div',{className:'load'},h('div',{className:'spin'}));
-  if(!me) return h(PickUser,{onPick:k=>{localStorage.setItem('madeira_me_'+TRIP_ID,k);setMe(k)}});
+  if(!uid||days===null||foods===null||bars===null||config===undefined)
+    return h('div',{className:'load'},h('div',{className:'spin'}));
+  // primeira vez nesta viagem: pedir nomes/datas
+  if(config===null) return h(Setup,{onDone:(cfg)=>{
+    applyConfig(cfg);
+    updateDoc(doc(db,'trips',TRIP_ID),{config:cfg}).catch(()=>{});
+    setConfig(cfg);
+  }});
+  if(!me) return h(PickUser,{config,onPick:k=>{localStorage.setItem('madeira_me_'+TRIP_ID,k);setMe(k)}});
 
   const meU=USERS[me];
   const save=(patch)=>updateDoc(doc(db,'trips',TRIP_ID),patch);
@@ -399,12 +434,43 @@ function InstallBanner(){
   );
 }
 
-function PickUser({onPick}){
+function Setup({onDone}){
+  const [u1,setU1]=useState(DEFAULT_CONFIG.u1name);
+  const [u2,setU2]=useState(DEFAULT_CONFIG.u2name);
+  const [dates,setDates]=useState(DEFAULT_CONFIG.dates);
+  const [subtitle,setSubtitle]=useState(DEFAULT_CONFIG.subtitle);
+  const go=()=>{
+    if(!u1.trim()||!u2.trim()) return;
+    onDone({u1name:u1.trim(),u2name:u2.trim(),dates:dates.trim(),subtitle:subtitle.trim()});
+  };
+  return h('div',{className:'scr',style:{paddingTop:'12vh'}},
+    h('h1',{className:'display center',style:{fontSize:44,fontWeight:700,margin:'0 0 4px'}},'Madeira'),
+    h('p',{className:'center muted',style:{marginBottom:30,fontSize:14.5}},
+      'Vamos preparar a vossa viagem'),
+    h('label',{className:'fld'},'Nome do 1º viajante'),
+    h('input',{value:u1,onChange:e=>setU1(e.target.value),placeholder:'Ex.: Raquel',autoFocus:true}),
+    h('label',{className:'fld'},'Nome do 2º viajante'),
+    h('input',{value:u2,onChange:e=>setU2(e.target.value),placeholder:'Ex.: António'}),
+    h('label',{className:'fld'},'Datas da viagem (opcional)'),
+    h('input',{value:dates,onChange:e=>setDates(e.target.value),placeholder:'Ex.: 4 – 7 JUNHO 2026'}),
+    h('label',{className:'fld'},'Subtítulo (opcional)'),
+    h('input',{value:subtitle,onChange:e=>setSubtitle(e.target.value),
+      placeholder:'Ex.: Raquel e António · com o Bobi'}),
+    h('button',{className:'btn',style:{marginTop:22},onClick:go},'Começar'),
+    h('p',{className:'center muted',style:{marginTop:14,fontSize:12}},
+      'Vais escolher quem és no ecrã seguinte.')
+  );
+}
+
+function PickUser({config,onPick}){
+  const dates=(config&&config.dates)||'';
+  const subtitle=(config&&config.subtitle)||'';
   return h('div',{className:'scr',style:{paddingTop:'22vh'}},
-    h('div',{className:'center muted',style:{fontWeight:600,fontSize:13,letterSpacing:'.04em'}},
-      '18 – 22 JUNHO 2026'),
+    dates&&h('div',{className:'center muted',style:{fontWeight:600,fontSize:13,letterSpacing:'.04em'}},
+      dates.toUpperCase()),
     h('h1',{className:'display center',style:{fontSize:48,fontWeight:700,margin:'8px 0 4px'}},'Madeira'),
-    h('p',{className:'center muted',style:{marginBottom:40,fontSize:14.5}},'Rui e Rita · com o Troy'),
+    subtitle&&h('p',{className:'center muted',style:{marginBottom:40,fontSize:14.5}},subtitle),
+    !subtitle&&h('div',{style:{marginBottom:40}}),
     Object.entries(USERS).map(([k,u])=>
       h('button',{key:k,className:'btn',style:{background:u.color,marginBottom:11,
         display:'flex',alignItems:'center',justifyContent:'center',gap:12,
@@ -902,29 +968,120 @@ function BarVoteSheet({b,me,onClose,onVote}){
 
 /* ---------- MONTAGEM ---------- */
 function Video({days,posts}){
-  const [playing,setPlaying]=useState(false),[idx,setIdx]=useState(0);
+  const [playing,setPlaying]=useState(false);
+  const [idx,setIdx]=useState(0);
+  const [full,setFull]=useState(false);
+  const [music,setMusic]=useState(true);
+  const [order,setOrder]=useState([]);
+  const [beat,setBeat]=useState(false);
+  const audioRef=useRef(null);
+  const stepRef=useRef(null);
+
+  // recolher todas as fotos
   const all=[];
   days.forEach(d=>d.stops.forEach(s=>(s.photos||[]).forEach(p=>
     all.push({url:p.url,cap:p.cap||s.name,place:s.name,day:d.date,ts:p.ts}))));
-  posts.forEach(p=>all.push({url:p.url,cap:p.caption,place:p.caption||'Momento',
+  posts.forEach(p=>all.push({url:p.url,cap:p.caption||'Momento',place:p.caption||'Momento',
     day:new Date(p.ts).toLocaleDateString('pt-PT',{day:'2-digit',month:'short'}),ts:p.ts}));
-  all.sort((a,b)=>(a.ts||0)-(b.ts||0));
-  useEffect(()=>{if(!playing||!all.length)return;
-    const t=setInterval(()=>setIdx(i=>(i+1)%all.length),1500);return ()=>clearInterval(t)},[playing,all.length]);
+
+  const BPM=100, beatMs=60000/BPM; // batida
+  const cutBeats=2; // troca de foto a cada 2 batidas
+  const cutMs=beatMs*cutBeats;
+
+  const shuffle=(n)=>{const a=[...Array(n).keys()];
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+  // música genérica via Web Audio (batida tropical simples, sem ficheiro externo)
+  const startMusic=()=>{ if(!music) return;
+    try{
+      const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return;
+      const ctx=new Ctx(); audioRef.current={ctx,nodes:[],stop:false};
+      const now=ctx.currentTime;
+      // pads tropicais (acordes suaves em loop)
+      const chord=[[262,330,392],[294,370,440],[247,294,392],[262,330,392]]; // C Em-ish Bm-ish C
+      const master=ctx.createGain(); master.gain.value=0.16; master.connect(ctx.destination);
+      let t=now;
+      const loopBars=()=>{ if(audioRef.current?.stop) return;
+        chord.forEach((notes,bar)=>{
+          notes.forEach(f=>{ const o=ctx.createOscillator(),g=ctx.createGain();
+            o.type='sine'; o.frequency.value=f;
+            g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.5,t+0.05);
+            g.gain.linearRampToValueAtTime(0,t+beatMs*4/1000*0.95);
+            o.connect(g); g.connect(master); o.start(t); o.stop(t+beatMs*4/1000);
+          });
+          // kick em cada batida
+          for(let b=0;b<4;b++){ const k=ctx.createOscillator(),kg=ctx.createGain();
+            const kt=t+b*beatMs/1000;
+            k.type='sine'; k.frequency.setValueAtTime(140,kt); k.frequency.exponentialRampToValueAtTime(50,kt+0.12);
+            kg.gain.setValueAtTime(0.7,kt); kg.gain.exponentialRampToValueAtTime(0.01,kt+0.16);
+            k.connect(kg); kg.connect(master); k.start(kt); k.stop(kt+0.18);
+          }
+          t+=beatMs*4/1000;
+        });
+        audioRef.current.timer=setTimeout(loopBars, beatMs*16*0.9);
+      };
+      loopBars();
+    }catch(e){}
+  };
+  const stopMusic=()=>{ const a=audioRef.current; if(a){a.stop=true;clearTimeout(a.timer);
+    try{a.ctx.close()}catch(e){} audioRef.current=null;} };
+
+  const play=()=>{ if(all.length===0) return;
+    setOrder(shuffle(all.length)); setIdx(0); setPlaying(true); setFull(true); startMusic(); };
+  const stop=()=>{ setPlaying(false); setFull(false); stopMusic(); clearTimeout(stepRef.current); };
+
+  // avanço dos slides + pulso da batida
+  useEffect(()=>{ if(!playing||all.length===0) return;
+    const tick=()=>{ setIdx(i=>{ const ni=i+1;
+      if(ni>=order.length){ stop(); return i; } return ni; });
+      stepRef.current=setTimeout(tick,cutMs); };
+    stepRef.current=setTimeout(tick,cutMs);
+    const bt=setInterval(()=>{setBeat(b=>!b);}, beatMs);
+    return ()=>{clearTimeout(stepRef.current);clearInterval(bt);};
+  },[playing,order]);
+
+  useEffect(()=>()=>stopMusic(),[]); // limpa música ao sair
+
+  if(all.length===0) return h('div',{className:'scr'},
+    h('div',{className:'empty'},h(Icon,{d:ICONS.play,size:40}),
+      h('div',null,'Adiciona fotos no itinerário ou no diário para criar o reel.')));
+
+  const cur = order.length?all[order[idx]]:all[0];
+  const fx = 'fx'+((idx)%6); // transição varia por slide
+
+  // ecrã cheio (modo reel a tocar)
+  if(full) return h('div',{className:'reel full',onClick:stop},
+    h('img',{key:idx,className:'reel-img '+fx,style:{'--dur':cutMs+'ms'},src:cur.url}),
+    h('div',{className:'reel-progress'},
+      order.map((_,i)=>h('div',{key:i,
+        className:'seg'+(i<idx?' done':'')+(i===idx?' active':''),
+        style:i===idx?{'--x':1}:{}},
+        h('span',{style:i===idx?{animationDuration:cutMs+'ms'}:{}})))),
+    h('div',{className:'beat-dot'+(beat?' on':'')}),
+    h('div',{className:'reel-cap'},
+      h('div',{className:'pl'},cur.cap),h('div',{className:'dy'},cur.day)),
+    h('div',{style:{position:'absolute',bottom:14,right:16,zIndex:5,color:'rgba(255,255,255,.6)',
+      fontSize:11,fontWeight:600}},'toca para parar')
+  );
+
+  // ecrã normal (pré-visualização + botões)
   return h('div',{className:'scr'},
-    all.length===0?h('div',{className:'empty'},h(Icon,{d:ICONS.play,size:40}),
-        h('div',null,'Adiciona fotos no itinerário ou no diário para criar a montagem.'))
-      :h('div',null,
-        h('div',{className:'section-label'},all.length+' fotos · ordem cronológica'),
-        h('div',{className:'cinema'},h('img',{key:idx,src:all[idx].url}),
-          h('div',{className:'ov'},h('div',{className:'pl'},all[idx].cap),h('div',{className:'dy'},all[idx].day))),
-        h('div',{className:'foot-actions',style:{padding:'12px 0 0'}},
-          h('button',{className:'btn',style:{flex:1},onClick:()=>setPlaying(p=>!p)},playing?'Pausa':'Reproduzir'),
-          h('button',{className:'btn ghost sm',onClick:()=>setIdx(i=>(i+1)%all.length)},'Seguinte')),
-        h('div',{className:'muted center',style:{marginTop:8}},(idx+1)+' / '+all.length),
-        h('div',{className:'strip'},all.map((p,i)=>h('img',{key:i,src:p.url,className:i===idx?'cur':'',onClick:()=>setIdx(i)}))),
-        h('div',{className:'muted center',style:{marginTop:14,padding:'0 24px'}},
-          'Para guardar como vídeo, usa a gravação de ecrã do telemóvel durante a reprodução.'))
+    h('div',{className:'section-label'},all.length+' fotos · reel automático com música'),
+    h('div',{className:'reel'},
+      h('img',{className:'reel-img',src:all[0].url,style:{filter:'brightness(.92)'}}),
+      h('div',{className:'reel-cap'},
+        h('div',{className:'pl'},'O teu reel da Madeira'),
+        h('div',{className:'dy'},all.length+' momentos · cortes ao ritmo da música')),
+      h('div',{style:{position:'absolute',inset:0,display:'grid',placeItems:'center',zIndex:4}},
+        h('button',{className:'btn',style:{width:'auto',padding:'16px 28px',
+          boxShadow:'0 8px 30px rgba(0,0,0,.4)'},onClick:play},'▶  Reproduzir reel'))),
+    h('div',{className:'reel-controls'},
+      h('button',{className:'btn'+(music?'':' ghost'),style:{flex:1},
+        onClick:()=>setMusic(m=>!m)}, music?'♪ Música ligada':'Música desligada'),
+      h('button',{className:'btn ghost',style:{flex:1},onClick:play},'Recomeçar')),
+    h('div',{className:'strip'},all.map((p,i)=>h('img',{key:i,src:p.url,onClick:play}))),
+    h('div',{className:'muted center',style:{marginTop:14,padding:'0 24px'}},
+      'O reel baralha as fotos e corta ao ritmo. Para guardar, grava o ecrã durante a reprodução.')
   );
 }
 
